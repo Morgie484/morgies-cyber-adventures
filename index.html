@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Morgie's Cyber Adventures — Dey's Security Arcade</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="scanlines"></div>
+  <div id="toast-host"></div>
+
+  <!-- ===== HUD ===== -->
+  <header id="hud" class="hidden">
+    <div class="hud-item">
+      <span class="hud-label">AGENT</span>
+      <span id="hud-agent">—</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">MODE</span>
+      <span id="hud-diff">NORMAL</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">LEVEL</span>
+      <span id="hud-level">LVL 1</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">SCORE</span>
+      <span id="hud-score">0</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">LIVES</span>
+      <span id="hud-lives">♥ ♥ ♥</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">TIME</span>
+      <span id="hud-timer">--</span>
+    </div>
+    <button id="btn-mute" class="hud-mute" aria-label="Mute">🔊</button>
+  </header>
+
+  <main id="app">
+    <!-- ===== START SCREEN ===== -->
+    <section id="screen-start" class="screen active">
+      <div class="logo">
+        <h1>MORGIE'S <span class="accent">CYBER ADVENTURES</span></h1>
+        <p class="tagline">// DEY'S SECURITY ARCADE //</p>
+      </div>
+      <div class="brief">
+        <p>Agent, you've been recruited to the Cyber Response Unit.</p>
+        <p>Decode encrypted messages. Hunt through evidence. Catch the intruder.</p>
+        <p>Each mission teaches a real cybersecurity skill. Ready?</p>
+      </div>
+      <button class="btn btn-primary" id="btn-start">▶ ENTER</button>
+      <button class="btn btn-ghost" id="btn-board">🏆 LEADERBOARD</button>
+      <button class="btn btn-ghost" id="btn-achievements">🎖️ ACHIEVEMENTS</button>
+      <button class="btn btn-ghost" id="btn-howto">HOW TO PLAY</button>
+    </section>
+
+    <!-- ===== SETUP: difficulty + character ===== -->
+    <section id="screen-setup" class="screen">
+      <h2>AGENT SETUP</h2>
+
+      <h3 class="setup-head">1 · SELECT DIFFICULTY</h3>
+      <div id="difficulty-choices" class="choice-grid"></div>
+
+      <h3 class="setup-head">2 · SELECT AGENT</h3>
+      <div id="character-choices" class="choice-grid"></div>
+
+      <h3 class="setup-head">3 · CHOOSE A MODE</h3>
+      <div class="launch-row">
+        <button class="btn btn-primary" id="btn-launch-campaign">🎯 CAMPAIGN</button>
+        <button class="btn btn-primary" id="btn-launch-quickplay">🎲 RANDOM QUICKPLAY</button>
+      </div>
+      <p class="sub">Campaign: pick missions from the board. Quickplay: endless random missions until you run out of lives.</p>
+      <p id="boss-note" class="boss-note hidden"></p>
+      <button class="btn btn-ghost" id="btn-setup-back">◀ BACK</button>
+    </section>
+
+    <!-- ===== CHARACTER EDITOR ===== -->
+    <section id="screen-editor" class="screen">
+      <h2 id="editor-title">CUSTOMIZE AGENT</h2>
+
+      <label class="field-label">CODENAME (max 12)</label>
+      <input type="text" id="edit-name" class="text-input" maxlength="12" autocomplete="off" />
+
+      <label class="field-label">BIO</label>
+      <input type="text" id="edit-blurb" class="text-input" maxlength="90" autocomplete="off" />
+
+      <label class="field-label">AVATAR</label>
+      <div id="edit-icons" class="icon-grid"></div>
+
+      <label class="field-label">PERK TUNING <span class="sub">(balanced within limits)</span></label>
+      <div class="slider-row">
+        <span class="slider-name">Bonus lives</span>
+        <input type="range" id="edit-lives" />
+        <span class="slider-val" id="edit-lives-val">+0</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-name">Extra time</span>
+        <input type="range" id="edit-time" />
+        <span class="slider-val" id="edit-time-val">+0%</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-name">Score boost</span>
+        <input type="range" id="edit-score" />
+        <span class="slider-val" id="edit-score-val">+0%</span>
+      </div>
+      <div class="perk-pill" id="edit-preview">⚡ balanced</div>
+
+      <div class="launch-row">
+        <button class="btn btn-primary" id="btn-edit-save">💾 SAVE</button>
+        <button class="btn btn-ghost" id="btn-edit-reset">⟲ RESET TO DEFAULT</button>
+        <button class="btn btn-ghost" id="btn-edit-cancel">✕ CANCEL</button>
+      </div>
+    </section>
+
+    <!-- ===== LEADERBOARD ===== -->
+    <section id="screen-board" class="screen">
+      <h2>🏆 LEADERBOARD</h2>
+      <p class="sub">Top 10 runs on this device.</p>
+      <div id="board-body"></div>
+      <div class="launch-row">
+        <button class="btn btn-ghost" id="btn-board-back">◀ BACK</button>
+        <button class="btn btn-ghost" id="btn-board-clear">⟲ CLEAR BOARD</button>
+      </div>
+    </section>
+
+    <!-- ===== ACHIEVEMENTS ===== -->
+    <section id="screen-achievements" class="screen">
+      <h2>🎖️ ACHIEVEMENTS</h2>
+      <p class="sub">Progress: <span id="ach-progress">0 / 0 unlocked</span></p>
+      <div id="ach-body" class="ach-grid"></div>
+      <button class="btn btn-ghost" id="btn-ach-back">◀ BACK</button>
+    </section>
+
+    <!-- ===== HOW TO PLAY ===== -->
+    <section id="screen-howto" class="screen">
+      <h2>HOW TO PLAY</h2>
+      <ul class="howto-list">
+        <li><strong>Missions</strong> come in two tracks: 🔍 <em>Forensics</em> and 🔐 <em>Cryptography</em>.</li>
+        <li>Solve each puzzle before the <strong>timer</strong> runs out for bonus points.</li>
+        <li>Wrong answers cost a <strong>life ♥</strong>. Lose all three and the run ends.</li>
+        <li>Every mission ends with a <strong>debrief</strong> explaining the real concept.</li>
+        <li>Clear all missions to beat the game and earn your rank!</li>
+        <li>Pick a <strong>difficulty</strong> (Easy/Normal/Hard) and an <strong>agent</strong> with a unique perk before you start.</li>
+        <li>Try <strong>🎲 Quickplay</strong> for an endless run of random missions, and use the 🔊 button to toggle sound.</li>
+      </ul>
+      <button class="btn btn-primary" id="btn-howto-back">◀ BACK</button>
+    </section>
+
+    <!-- ===== MISSION SELECT ===== -->
+    <section id="screen-select" class="screen">
+      <h2>SELECT MISSION</h2>
+      <p class="sub">Complete missions to raise your rank. ✓ = cleared.</p>
+      <div id="mission-grid" class="mission-grid"></div>
+      <div class="launch-row">
+        <button class="btn btn-primary" id="btn-select-quickplay">🎲 QUICKPLAY INSTEAD</button>
+        <button class="btn btn-ghost" id="btn-reset">⟲ RESET PROGRESS</button>
+      </div>
+    </section>
+
+    <!-- ===== GAMEPLAY ===== -->
+    <section id="screen-play" class="screen">
+      <div class="mission-head">
+        <span id="play-tag" class="tag">FORENSICS</span>
+        <span id="play-diff"></span>
+        <h2 id="play-title">Mission</h2>
+      </div>
+      <p id="play-brief" class="brief-text"></p>
+      <div id="play-body" class="play-body"></div>
+      <div id="play-feedback" class="feedback hidden"></div>
+      <div class="play-controls">
+        <button class="btn btn-ghost" id="btn-abort">◀ ABORT</button>
+        <button class="btn btn-primary" id="btn-submit">SUBMIT</button>
+        <button class="btn btn-primary hidden" id="btn-continue">CONTINUE ▶</button>
+      </div>
+    </section>
+
+    <!-- ===== GAME OVER / WIN ===== -->
+    <section id="screen-end" class="screen">
+      <h2 id="end-title">MISSION FAILED</h2>
+      <p id="end-msg" class="brief-text"></p>
+      <div class="end-stats">
+        <div><span class="hud-label">FINAL SCORE</span><span id="end-score">0</span></div>
+        <div><span class="hud-label">RANK</span><span id="end-rank">—</span></div>
+      </div>
+      <p id="end-detail" class="sub"></p>
+
+      <div id="end-lb-entry" class="lb-entry hidden">
+        <p id="lb-save-msg">🏆 You made the leaderboard! Enter a name:</p>
+        <input type="text" id="lb-name" class="text-input" maxlength="12" autocomplete="off" />
+        <div class="launch-row">
+          <button class="btn btn-primary" id="btn-lb-save">SAVE SCORE</button>
+          <button class="btn btn-ghost" id="btn-lb-skip">SKIP</button>
+        </div>
+      </div>
+      <div id="end-lb-saved" class="lb-saved hidden"></div>
+
+      <button class="btn btn-primary" id="btn-again">⟲ PLAY AGAIN</button>
+      <button class="btn btn-ghost" id="btn-ach-view">🎖️ ACHIEVEMENTS</button>
+    </section>
+  </main>
+
+  <footer id="credits">Morgie's Cyber Adventures · an educational cyber game · built for learning</footer>
+
+  <script src="audio.js"></script>
+  <script src="characters.js"></script>
+  <script src="leaderboard.js"></script>
+  <script src="achievements.js"></script>
+  <script src="missions.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
