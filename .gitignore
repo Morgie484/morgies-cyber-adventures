@@ -1,0 +1,11 @@
+# Kiro workspace config
+.kiro/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Logs
+*.log
