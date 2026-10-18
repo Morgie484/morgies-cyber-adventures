@@ -1,4 +1,4 @@
-// TRACE — main orchestrator. Ties the overworld, terminal, dialogue,
+// GREPOIRE — main orchestrator. Ties the overworld, terminal, dialogue,
 // character sheet, dice rolls, audio, and case resolution together.
 
 import { createCharacter, addEvidence, grantXP, modFor, spendStatPoint } from "./engine/character.js";

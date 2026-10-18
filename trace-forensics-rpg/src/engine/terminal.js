@@ -68,7 +68,7 @@ export class Terminal {
   get commands() {
     return {
       help: () => [
-        line("TRACE FORENSIC SHELL — available commands:", "t-cyan"),
+        line("GREPOIRE FORENSIC SHELL — available commands:", "t-cyan"),
         line(""),
         line("  ls [-a]            list files   (-a also shows hidden files)"),
         line("  cat <file>         read a file's contents"),

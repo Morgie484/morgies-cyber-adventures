@@ -10,7 +10,7 @@ import {
 } from "../engine/appearance.js";
 
 const BOOT_LINES = [
-  "TRACE OS v1.4 — Forensic Investigation Platform",
+  "GREPOIRE OS v1.4 — Forensic Investigation Platform",
   "booting secure shell..............[ OK ]",
   "mounting evidence vault...........[ OK ]",
   "loading case files................[ OK ]",
