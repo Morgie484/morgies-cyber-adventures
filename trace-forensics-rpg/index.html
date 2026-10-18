@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TRACE — Digital Forensics Investigation</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="boot">
+    <pre id="boot-text"></pre>
+  </div>
+
+  <div id="game" class="hidden">
+    <!-- Overworld -->
+    <canvas id="world" width="800" height="600"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div id="case-title">CASE #4471 — Operation Nightjar</div>
+      <div id="hint"></div>
+    </div>
+
+    <!-- Terminal / forensics workstation -->
+    <div id="workstation" class="hidden">
+      <div id="ws-header">
+        <span id="ws-host">workstation</span>
+        <button id="ws-exit">[ ESC ] Disconnect</button>
+      </div>
+      <div id="ws-body">
+        <div id="terminal">
+          <div id="term-output"></div>
+          <div id="term-input-line">
+            <span id="term-prompt">investigator@trace:~$</span>
+            <input id="term-input" autocomplete="off" spellcheck="false" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Evidence board / case submission -->
+    <div id="evidence-board" class="hidden">
+      <h2>EVIDENCE BOARD</h2>
+      <div id="evidence-list"></div>
+      <div id="case-questions"></div>
+      <button id="eb-close">Close</button>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+# TRACE — A Digital Forensics Investigation RPG
+
+A browser-based, **D&D-style** forensics RPG with a **hybrid open world**: play a
+customizable **data-mage**, walk a top-down map, enter locations, and "jack in"
+to devices to do **realistic** digital-forensics work in a working command-line
+shell. Skill checks resolve with an **animated d20 roll**, and everything has
+**procedural music & sound effects**.
+
+Built to be **beginner-friendly** — a guided training case teaches one concept
+at a time, every command self-documents, and you can never permanently fail —
+with **harder cases** (encrypted data, hash-tampering, multi-hop trails) mixed in.
+
+## Features
+- **Animated dice rolls** — a tumbling d20 lands on your result with success/crit flair and sound.
+- **Customizable wizard characters** — pick robe color, hat, magic focus, aura, and skin; your look appears on the overworld avatar and in creation.
+- **Multiple cases, scaling difficulty** — a TUTORIAL case and a HARD case (`dcBonus` raises every skill-check DC). Pick from the case-select screen; solving one unlocks the next.
+- **Procedural audio** — ambient arcane music + SFX for movement, typing, dice, evidence, success/failure, and level-ups. Toggle with the on-screen button or **M**. No audio files required.
+
+## How to play
+
+Because it uses ES modules, serve the folder over HTTP (don't open the file
+directly):
+
+```bash
+cd /projects/sandbox
+python3 -m http.server 8000
+# then open http://localhost:8000
+```
+
+### Controls
+- **WASD / arrow keys** — move around the world
+- **SPACE** — enter a location (blue block) or talk to an NPC (yellow dot)
+- **E** — open the Evidence Board (review clues, spend skill points, solve the case)
+- **M** — mute / unmute audio
+- **ESC** — disconnect from a device / close a panel
+
+### The loop
+1. **Create your investigator** — pick a background that sets your skills
+   (LOGIC, PERCEPTION, TECH, SOCIAL, COMPOSURE).
+2. **Explore** the three locations on the map.
+3. **Investigate devices** in the terminal. Type `help` to see commands.
+4. **Tag evidence** with `tag <file>`. Risky actions trigger **dice rolls**
+   (`d20 + skill vs. difficulty`) — like D&D skill checks.
+5. **Interrogate NPCs** — SOCIAL checks unlock confessions (some need evidence first).
+6. **Solve the case** on the Evidence Board: WHO, HOW, and WHEN.
+
+### Forensics concepts you'll learn (Case #4471)
+- Listing / reading files, and finding **hidden** files (`ls -a`)
+- **Recovering deleted** files (`scan`, then `recover`)
+- **Hashes** as fingerprints, and **verifying** file integrity (`sha256`, `verify`)
+- Reading **logs** as a **timeline** to trace an intruder (`log`, `grep`)
+- **Decoding** scrambled/encoded data (`decode`)
+
+## Project structure
+
+```
+index.html            Entry point + layout
+styles.css            Terminal/CRT styling + dice-popup animation
+src/
+  main.js             Orchestrator: world + terminal + dialogue + dice + audio + cases
+  engine/
+    dice.js           d20 skill-check engine (crit success/failure, DCs)
+    character.js      Stats, backgrounds, perks, XP/leveling, inventory, appearance
+    crypto.js         hash / strings / hexdump / ROT / base64 helpers
+    filesystem.js     Simulated device filesystem (deleted/hidden/locked files)
+    terminal.js       The forensic shell: all commands, async skill-gated actions
+    appearance.js     Customizable data-mage data + canvas renderer
+    audio.js          Procedural Web Audio music + SFX (no asset files)
+  world/
+    overworld.js      Top-down map, movement, collision, custom avatar, prompts
+  ui/
+    screens.js        Boot, character creation, case select, dialogue, evidence board
+    diceRoll.js       Animated d20 roll popup
+  data/
+    case01.js         "Operation Nightjar" — TUTORIAL case
+    case02.js         "Hollow Ledger" — HARD case (tamper detection, backdoor, insider)
+    cases.js          Case registry
+```
+
+## Adding a harder case
+Set a `difficulty` label and a `dcBonus` (added to every skill-check DC) on the
+case object, then raise the required rolls by using encrypted (`locked`) files,
+hash mismatches, and multi-step NPC confrontations gated behind decoded evidence.
+See `case02.js` for a worked example.
+
+## Adding more cases
+Each case is a self-contained module in `src/data/` describing its devices
+(filesystems), NPCs (dialogue trees), and the questions that solve it. Copy
+`case01.js` as a template.
+```
