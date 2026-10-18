@@ -173,7 +173,9 @@ export function showDialogue({ npcName, tree, character, hasEvidence, rollCheck,
       <div style="line-height:1.5;margin-bottom:16px">${node.text}</div>`;
     for (const opt of node.options) {
       const btn = document.createElement("button");
-      const gated = opt.requires && !hasEvidence(opt.requires);
+      const gated =
+        (opt.requires && !hasEvidence(opt.requires)) ||
+        (opt.requires2 && !hasEvidence(opt.requires2));
       btn.textContent = (opt.dc ? `🎲 ` : "") + opt.text + (gated ? "  (need evidence first)" : "");
       btn.disabled = gated;
       btn.style.cssText =
@@ -214,7 +216,8 @@ export function showCaseSelect(cases, onPick) {
   const overlay = document.createElement("div");
   overlay.style.cssText =
     "position:fixed;inset:0;background:#05070a;z-index:80;padding:5%;overflow:auto;color:#d6e1e8;font-family:monospace";
-  const diffColor = (d) => (d === "HARD" ? "#ff4b4b" : d === "TUTORIAL" ? "#39ff14" : "#ffb000");
+  const diffColor = (d) =>
+    d === "EXPERT" ? "#c9a6ff" : d === "HARD" ? "#ff4b4b" : d === "TUTORIAL" ? "#39ff14" : "#ffb000";
 
   overlay.innerHTML =
     `<h1 style="color:#ffb000;letter-spacing:2px">SELECT A CASE</h1>
@@ -240,4 +243,71 @@ export function showCaseSelect(cases, onPick) {
   });
 
   document.body.appendChild(overlay);
+}
+
+// Title / landing screen. Animated logo, tagline, and a start button.
+// Shown before the boot sequence.
+export function showTitleScreen(onStart) {
+  const overlay = document.createElement("div");
+  overlay.id = "title-screen";
+  overlay.innerHTML = `
+    <canvas id="title-fx" width="800" height="600"></canvas>
+    <div class="title-content">
+      <div class="title-logo">GREPOIRE</div>
+      <div class="title-sub">the grep meets the grimoire</div>
+      <div class="title-tag">A digital forensics investigation RPG</div>
+      <button id="title-start" class="primary title-start">▶ ENTER THE ARCHIVE</button>
+      <div class="title-credit">a MORG systems production</div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  // Falling "data rune" rain behind the logo (matrix-ish, arcane palette).
+  const canvas = overlay.querySelector("#title-fx");
+  const ctx = canvas.getContext("2d");
+  const glyphs = "01<>{}/\\|=+*#ᚠᚢᚦᚨᚱᚲᚷᛈᛉᛊ$%&".split("");
+  const cols = Math.floor(canvas.width / 16);
+  const drops = Array.from({ length: cols }, () => Math.floor((Math.random() * -canvas.height) / 16));
+  let raf;
+  const draw = () => {
+    ctx.fillStyle = "rgba(5,7,10,0.12)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = "14px monospace";
+    for (let i = 0; i < cols; i++) {
+      const g = glyphs[Math.floor(Math.random() * glyphs.length)];
+      const x = i * 16;
+      const y = drops[i] * 16;
+      ctx.fillStyle = Math.random() > 0.97 ? "#c9a6ff" : "#2a7d6a";
+      ctx.fillText(g, x, y);
+      if (y > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+    raf = requestAnimationFrame(draw);
+  };
+  draw();
+
+  const start = () => {
+    audio.sfx("confirm");
+    cancelAnimationFrame(raf);
+    overlay.classList.add("title-fade");
+    setTimeout(() => { overlay.remove(); onStart(); }, 400);
+  };
+  overlay.querySelector("#title-start").onclick = start;
+}
+
+// Level-up celebration popup. Shows the new level and any stat-point award.
+export function showLevelUp(level, statPoints) {
+  const overlay = document.createElement("div");
+  overlay.className = "levelup-overlay";
+  overlay.innerHTML = `
+    <div class="levelup-box">
+      <div class="levelup-burst"></div>
+      <div class="levelup-title">LEVEL UP</div>
+      <div class="levelup-level">Level ${level}</div>
+      <div class="levelup-sub">+${statPoints} skill point${statPoints === 1 ? "" : "s"} — spend them on the Evidence Board</div>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(() => {
+    overlay.classList.add("fade-out");
+    setTimeout(() => overlay.remove(), 400);
+  }, 1900);
 }

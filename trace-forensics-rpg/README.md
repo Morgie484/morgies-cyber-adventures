@@ -15,9 +15,15 @@ at a time, every command self-documents, and you can never permanently fail —
 with **harder cases** (encrypted data, hash-tampering, multi-hop trails) mixed in.
 
 ## Features
+- **Animated title screen** — a GREPOIRE landing page with falling data-rune rain before you begin.
 - **Animated dice rolls** — a tumbling d20 lands on your result with success/crit flair and sound.
+- **Level-up celebration** — a burst animation announces each new level and the skill points you earned.
 - **Customizable wizard characters** — pick robe color, hat, magic focus, aura, and skin; your look appears on the overworld avatar and in creation.
-- **Multiple cases, scaling difficulty** — a TUTORIAL case and a HARD case (`dcBonus` raises every skill-check DC). Pick from the case-select screen; solving one unlocks the next.
+- **Three cases, scaling difficulty:**
+  - `Operation Nightjar` — **TUTORIAL** (learn the tools)
+  - `Hollow Ledger` — **HARD** (hash-tamper detection, a hidden backdoor, a multi-hop trail)
+  - `Silent Quorum` — **EXPERT** (a frame-up to see through, a tampered log, chained `base64 → ROT13` decoding, and a confession gated behind two pieces of evidence)
+  - `dcBonus` raises every skill-check DC per case; pick from the case-select screen, and solving one offers the next.
 - **Procedural audio** — ambient arcane music + SFX for movement, typing, dice, evidence, success/failure, and level-ups. Toggle with the on-screen button or **M**. No audio files required.
 
 ## How to play
@@ -78,6 +84,7 @@ src/
   data/
     case01.js         "Operation Nightjar" — TUTORIAL case
     case02.js         "Hollow Ledger" — HARD case (tamper detection, backdoor, insider)
+    case03.js         "Silent Quorum" — EXPERT case (frame-up, chained decoding, 2-evidence gate)
     cases.js          Case registry
 ```
 
