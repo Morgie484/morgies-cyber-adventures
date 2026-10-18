@@ -212,7 +212,8 @@ export function showDialogue({ npcName, tree, character, hasEvidence, rollCheck,
 }
 
 // Case selection screen. Lists cases easiest → hardest.
-export function showCaseSelect(cases, onPick) {
+export function showCaseSelect(cases, onPick, opts = {}) {
+  const solved = new Set(opts.solved || []);
   const overlay = document.createElement("div");
   overlay.style.cssText =
     "position:fixed;inset:0;background:#05070a;z-index:80;padding:5%;overflow:auto;color:#d6e1e8;font-family:monospace";
@@ -229,13 +230,15 @@ export function showCaseSelect(cases, onPick) {
     const card = document.createElement("div");
     card.style.cssText =
       "border:1px solid #22303d;background:#0b131c;padding:14px;margin:10px 0;cursor:pointer";
+    const isSolved = solved.has(c.id);
+    const solvedBadge = isSolved ? ` <span style="color:#39ff14;font-size:12px">✓ SOLVED</span>` : "";
     card.innerHTML =
       `<div style="display:flex;justify-content:space-between;align-items:center">
-         <span style="color:#26d9ff;font-weight:bold">CASE #${c.id} — ${c.name}</span>
+         <span style="color:#26d9ff;font-weight:bold">CASE #${c.id} — ${c.name}${solvedBadge}</span>
          <span style="color:${diffColor(c.difficulty)};border:1px solid ${diffColor(c.difficulty)};padding:2px 8px;font-size:12px">${c.difficulty}</span>
        </div>
        <div style="color:#8aa;margin-top:8px;font-size:13px;line-height:1.5">${c.brief}</div>
-       <button class="primary" style="margin-top:10px">Investigate →</button>`;
+       <button class="primary" style="margin-top:10px">${isSolved ? "Replay →" : "Investigate →"}</button>`;
     const go = () => { audio.sfx("confirm"); document.body.removeChild(overlay); onPick(c.id); };
     card.querySelector("button").onclick = go;
     card.onmouseenter = () => audio.sfx("move");
@@ -245,18 +248,22 @@ export function showCaseSelect(cases, onPick) {
   document.body.appendChild(overlay);
 }
 
-// Title / landing screen. Animated logo, tagline, and a start button.
-// Shown before the boot sequence.
-export function showTitleScreen(onStart) {
+// Title / landing screen. Animated logo, tagline, and start buttons.
+// Calls onStart("new") or onStart("continue"). Shows Continue if a save exists.
+export function showTitleScreen(onStart, save = null) {
   const overlay = document.createElement("div");
   overlay.id = "title-screen";
+  const continueBtn = save
+    ? `<button id="title-continue" class="primary title-start">▶ CONTINUE — ${save.name}, Lv ${save.level} (${save.solvedCount} solved)</button>`
+    : "";
   overlay.innerHTML = `
     <canvas id="title-fx" width="800" height="600"></canvas>
     <div class="title-content">
       <div class="title-logo">GREPOIRE</div>
       <div class="title-sub">the grep meets the grimoire</div>
       <div class="title-tag">A digital forensics investigation RPG</div>
-      <button id="title-start" class="primary title-start">▶ ENTER THE ARCHIVE</button>
+      ${continueBtn}
+      <button id="title-start" class="primary title-start">${save ? "✦ NEW GAME" : "▶ ENTER THE ARCHIVE"}</button>
       <div class="title-credit">a MORG systems production</div>
     </div>`;
   document.body.appendChild(overlay);
@@ -285,13 +292,15 @@ export function showTitleScreen(onStart) {
   };
   draw();
 
-  const start = () => {
+  const start = (choice) => {
     audio.sfx("confirm");
     cancelAnimationFrame(raf);
     overlay.classList.add("title-fade");
-    setTimeout(() => { overlay.remove(); onStart(); }, 400);
+    setTimeout(() => { overlay.remove(); onStart(choice); }, 400);
   };
-  overlay.querySelector("#title-start").onclick = start;
+  overlay.querySelector("#title-start").onclick = () => start("new");
+  const cont = overlay.querySelector("#title-continue");
+  if (cont) cont.onclick = () => start("continue");
 }
 
 // Level-up celebration popup. Shows the new level and any stat-point award.

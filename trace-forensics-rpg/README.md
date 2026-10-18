@@ -15,6 +15,7 @@ at a time, every command self-documents, and you can never permanently fail —
 with **harder cases** (encrypted data, hash-tampering, multi-hop trails) mixed in.
 
 ## Features
+- **Save & continue** — progress auto-saves to your browser (localStorage): character, level, appearance, and which cases you've solved. The title screen offers **Continue** when a save exists; **New Game** starts fresh.
 - **Animated title screen** — a GREPOIRE landing page with falling data-rune rain before you begin.
 - **Animated dice rolls** — a tumbling d20 lands on your result with success/crit flair and sound.
 - **Level-up celebration** — a burst animation announces each new level and the skill points you earned.
@@ -76,6 +77,7 @@ src/
     terminal.js       The forensic shell: all commands, async skill-gated actions
     appearance.js     Customizable data-mage data + canvas renderer
     audio.js          Procedural Web Audio music + SFX (no asset files)
+    save.js           Save/load to localStorage (character, progress, solved cases)
   world/
     overworld.js      Top-down map, movement, collision, custom avatar, prompts
   ui/
