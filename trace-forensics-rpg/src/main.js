@@ -29,10 +29,23 @@ function persist() {
 }
 
 // ---------- boot & character creation ----------
-// Unlock audio on the very first interaction anywhere.
-const unlockAudioOnce = () => { audio.unlock(); audio.startMusic(); window.removeEventListener("pointerdown", unlockAudioOnce); window.removeEventListener("keydown", unlockAudioOnce); };
+// Unlock audio on the very first interaction anywhere. iOS Safari needs a
+// user gesture and also suspends the context when backgrounded, so we listen
+// on touchend/pointerdown/keydown and resume on visibility change.
+const unlockAudioOnce = () => {
+  audio.unlock();
+  audio.startMusic();
+  window.removeEventListener("pointerdown", unlockAudioOnce);
+  window.removeEventListener("touchend", unlockAudioOnce);
+  window.removeEventListener("keydown", unlockAudioOnce);
+};
 window.addEventListener("pointerdown", unlockAudioOnce);
+window.addEventListener("touchend", unlockAudioOnce);
 window.addEventListener("keydown", unlockAudioOnce);
+// Resume audio when returning to the tab/app (iOS suspends it in background).
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) audio.unlock();
+});
 
 // Title screen → (Continue | New Game) → boot → creation → case select → game.
 showTitleScreen((choice) => {
@@ -79,8 +92,11 @@ function startGame() {
   audio.startMusic();
   $("game").classList.remove("hidden");
   world = new Overworld($("world"), state.activeCase, state.character.appearance);
-  setHint("WASD move · SPACE interact · [E] Evidence · [J] Codex · [M] Mute");
+  setHint(IS_TOUCH
+    ? "D-pad to move · ✦ to interact · E Evidence · J Codex"
+    : "WASD move · SPACE interact · [E] Evidence · [J] Codex · [M] Mute");
   installAudioToggle();
+  if (IS_TOUCH) setupTouchControls();
   loop();
 
   window.addEventListener("keydown", onKeyDown);
@@ -91,8 +107,76 @@ function startGame() {
   $("case-title").textContent = `CASE #${state.activeCase.id} — ${state.activeCase.name} [${state.activeCase.difficulty}]`;
 }
 
+// ---------- touch controls ----------
+const IS_TOUCH = (typeof window !== "undefined") &&
+  ("ontouchstart" in window || (navigator.maxTouchPoints || 0) > 0);
+
+function setupTouchControls() {
+  document.body.classList.add("touch");
+  const tc = $("touch-controls");
+  const quickbar = $("term-quickbar");
+  if (quickbar) quickbar.classList.remove("hidden");
+
+  // Keep the overworld controls visible only in world mode.
+  updateTouchVisibility();
+
+  // D-pad → drive the same keys the keyboard uses.
+  const dirKey = { up: "w", down: "s", left: "a", right: "d" };
+  tc.querySelectorAll(".dpad-btn").forEach((btn) => {
+    const k = dirKey[btn.dataset.dir];
+    const press = (e) => { e.preventDefault(); world.keys[k] = true; };
+    const release = (e) => { e.preventDefault(); world.keys[k] = false; };
+    btn.addEventListener("touchstart", press, { passive: false });
+    btn.addEventListener("touchend", release, { passive: false });
+    btn.addEventListener("touchcancel", release, { passive: false });
+    // also support mouse (desktop testing)
+    btn.addEventListener("mousedown", press);
+    btn.addEventListener("mouseup", release);
+    btn.addEventListener("mouseleave", release);
+  });
+
+  // Action buttons.
+  const tap = (id, fn) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener("touchstart", (e) => { e.preventDefault(); fn(); }, { passive: false });
+    el.addEventListener("click", (e) => { e.preventDefault(); fn(); });
+  };
+  tap("t-action", () => { if (state.mode === "world") interact(); });
+  tap("t-evidence", () => { if (state.mode === "world") openBoard(); });
+  tap("t-codex", () => { if (state.mode === "world") openCodex(); });
+
+  // Quick-command bar in the terminal.
+  if (quickbar) {
+    quickbar.querySelectorAll("button").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const cmd = btn.dataset.cmd;
+        const input = $("term-input");
+        if (cmd.endsWith(" ")) {
+          // command needs an argument: prefill and focus for the filename
+          input.value = cmd;
+          input.focus();
+        } else {
+          // runnable as-is
+          await runTerminalLine(cmd);
+        }
+      });
+    });
+  }
+}
+
+function updateTouchVisibility() {
+  if (!IS_TOUCH) return;
+  const tc = $("touch-controls");
+  if (!tc) return;
+  tc.classList.toggle("hidden", state.mode !== "world");
+}
+
 let lastMoveSound = 0;
+let lastTouchMode = null;
 function loop() {
+  // Keep touch controls in sync with the current mode (cheap, idempotent).
+  if (IS_TOUCH && state.mode !== lastTouchMode) { updateTouchVisibility(); lastTouchMode = state.mode; }
   if (state.mode === "world") {
     const before = `${Math.round(world.player.x)},${Math.round(world.player.y)}`;
     world.update();
@@ -267,21 +351,29 @@ function bindInput() {
 
     if (e.key === "Enter") {
       const raw = input.value;
-      printLine(`${t.prompt()} ${raw}`, "t-dim");
       input.value = "";
-      state.histIndex = null; // reset history cursor after a command
-      input.disabled = true; // prevent double-submit during async roll
-      const lines = await t.run(raw);
-      input.disabled = false;
-      input.focus();
-      for (const l of lines) {
-        if (l.clear) { $("term-output").innerHTML = ""; continue; }
-        if (l.exit) { closeTerminal(); return; }
-        printLine(l.text, l.cls);
-      }
-      $("term-prompt").textContent = t.prompt();
+      await runTerminalLine(raw);
     }
   });
+}
+
+// Run one line through the terminal and render the output. Shared by the
+// Enter key and the mobile quick-command bar.
+async function runTerminalLine(raw) {
+  if (state.mode !== "terminal" || !state.terminal) return;
+  const t = state.terminal;
+  const input = $("term-input");
+  printLine(`${t.prompt()} ${raw}`, "t-dim");
+  state.histIndex = null; // reset history cursor after a command
+  input.disabled = true;  // prevent double-submit during async roll
+  const lines = await t.run(raw);
+  input.disabled = false;
+  for (const l of lines) {
+    if (l.clear) { $("term-output").innerHTML = ""; continue; }
+    if (l.exit) { closeTerminal(); return; }
+    printLine(l.text, l.cls);
+  }
+  $("term-prompt").textContent = t.prompt();
 }
 
 // Longest common prefix of a list of strings (for Tab-completion).
