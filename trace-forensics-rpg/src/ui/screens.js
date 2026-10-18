@@ -10,10 +10,12 @@ import {
 } from "../engine/appearance.js";
 
 const BOOT_LINES = [
-  "TRACE OS v1.4 — Forensic Investigation Platform",
+  "GREPOIRE OS v1.4 — Forensic Investigation Platform",
+  "a MORG systems production",
   "booting secure shell..............[ OK ]",
   "mounting evidence vault...........[ OK ]",
   "loading case files................[ OK ]",
+  "arcane runtime (morg-core)........[ OK ]",
   "",
   "CASE #4471 — OPERATION NIGHTJAR",
   "Meridian Dynamics reports a confidential client list has leaked.",

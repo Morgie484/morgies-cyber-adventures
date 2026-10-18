@@ -1,4 +1,8 @@
-# TRACE — A Digital Forensics Investigation RPG
+# GREPOIRE — A Digital Forensics Investigation RPG
+
+> *`grep` + grimoire* — part search command, part book of spells. Trace the ghost in the logs.
+>
+> *A **MORG** systems production.* (psst — try typing `morg` in the forensic shell.)
 
 A browser-based, **D&D-style** forensics RPG with a **hybrid open world**: play a
 customizable **data-mage**, walk a top-down map, enter locations, and "jack in"
