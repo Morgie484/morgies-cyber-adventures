@@ -12,29 +12,57 @@ export const STAT_DESC = {
   COMPOSURE: "Holding steady under time pressure and traps.",
 };
 
-// Backgrounds set a starting stat spread (point-buy baseline of 10 each,
-// with a themed +/- distribution) and grant a signature perk.
+// Backgrounds are your CLASS in the Order of the Silent Grep. Each sets a
+// starting discipline spread (point-buy baseline of 10) and a signature boon.
+// `name` is the mythic class title; `role` is the mortal-world origin flavor.
 export const BACKGROUNDS = {
   "ex-law": {
-    name: "Ex-Law Enforcement",
-    blurb: "You worked cybercrime at the Bureau. Procedure is second nature.",
+    name: "Warden of Seals",
+    role: "Once a cybercrime investigator; now sworn to guard the truth.",
+    blurb: "A paladin of procedure. Every artifact you seal is unbreakable in the Order's eyes.",
     stats: { LOGIC: 12, PERCEPTION: 14, TECH: 10, SOCIAL: 13, COMPOSURE: 11 },
-    perk: "Chain of Custody: evidence you log can never be challenged.",
+    perk: "Chain of Custody: evidence you seal can never be challenged.",
     perkId: "chain_of_custody",
   },
   "black-hat": {
-    name: "Black-Hat Turncoat",
-    blurb: "You used to be on the other side. You know how they think.",
+    name: "Shadow Revenant",
+    role: "A former breaker of wards who turned to the Order's light.",
+    blurb: "You once served the Null Choir. You still think like the hand that strikes.",
     stats: { LOGIC: 13, PERCEPTION: 11, TECH: 15, SOCIAL: 9, COMPOSURE: 12 },
     perk: "Insider's Eye: +2 on checks to understand attacker tooling.",
     perkId: "insiders_eye",
   },
   "academic": {
-    name: "Academic Cryptographer",
-    blurb: "A researcher pulled into the field. Theory over instinct.",
+    name: "Rune-Scholar",
+    role: "A cloistered cryptomancer drawn into the field by the Order.",
+    blurb: "Theory before instinct. Ciphers unknot themselves beneath your gaze.",
     stats: { LOGIC: 15, PERCEPTION: 12, TECH: 11, SOCIAL: 10, COMPOSURE: 12 },
     perk: "First Principles: +2 on cryptanalysis and decoding checks.",
     perkId: "first_principles",
+  },
+  "seer": {
+    name: "Aether-Seer",
+    role: "A clairvoyant who reads the streams between worlds.",
+    blurb: "You see what others miss — the faint echo, the forged line, the whisper in the traffic.",
+    stats: { LOGIC: 11, PERCEPTION: 16, TECH: 11, SOCIAL: 10, COMPOSURE: 12 },
+    perk: "Second Sight: +2 on scrying checks (scan / traffic analysis).",
+    perkId: "second_sight",
+  },
+  "bard": {
+    name: "Silver-Tongue Bard",
+    role: "A wandering loremonger who loosens any guarded tongue.",
+    blurb: "Doors open and suspects crack when you speak. Your weakness is the raw arcana.",
+    stats: { LOGIC: 10, PERCEPTION: 11, TECH: 9, SOCIAL: 16, COMPOSURE: 14 },
+    perk: "Honeyed Words: +2 on all SOCIAL checks when confronting a suspect.",
+    perkId: "honeyed_words",
+  },
+  "artificer": {
+    name: "Clockwork Artificer",
+    role: "A tinker-mage who bends arcane tools to their will.",
+    blurb: "No ward survives your instruments, no echo stays buried. Steady hands, steadier nerves.",
+    stats: { LOGIC: 12, PERCEPTION: 11, TECH: 15, SOCIAL: 9, COMPOSURE: 13 },
+    perk: "Master's Tools: +2 on TECH checks (recover / reassemble streams).",
+    perkId: "masters_tools",
   },
 };
 
@@ -61,9 +89,12 @@ export function createCharacter(name, backgroundId) {
 
 export function modFor(character, stat, context = {}) {
   let mod = statModifier(character.stats[stat]);
-  // Perk bonuses.
+  // Boon (perk) bonuses, keyed to the check's context tag.
   if (character.perkId === "insiders_eye" && context.tag === "attacker-tooling") mod += 2;
   if (character.perkId === "first_principles" && context.tag === "crypto") mod += 2;
+  if (character.perkId === "second_sight" && context.tag === "scan") mod += 2;
+  if (character.perkId === "honeyed_words" && context.tag === "social") mod += 2;
+  if (character.perkId === "masters_tools" && context.tag === "recover") mod += 2;
   return mod;
 }
 

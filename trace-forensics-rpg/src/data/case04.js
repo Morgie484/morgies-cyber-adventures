@@ -53,7 +53,7 @@ function buildCourier() {
 
 export const CASE_WHISPERING_AETHER = {
   id: "8842",
-  name: "The Whispering Aether",
+  name: "Song of the Null Choir",
   difficulty: "EXPERT",
   dcBonus: 6,
   reward: 350,

@@ -78,7 +78,7 @@ function buildStaging() {
 
 export const CASE_SILENT_QUORUM = {
   id: "7013",
-  name: "Silent Quorum",
+  name: "The Masque of the Revenant",
   difficulty: "EXPERT",
   dcBonus: 7, // hardest checks in the game
   reward: 400,

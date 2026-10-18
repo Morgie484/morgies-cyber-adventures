@@ -48,10 +48,10 @@ html, body {
 }
 
 #world {
-  background: #0a0e14;
+  background: #0a1410;
   image-rendering: pixelated;
-  border: 1px solid #1b2733;
-  box-shadow: 0 0 60px rgba(38, 217, 255, 0.08);
+  border: 1px solid #1c3a26;
+  box-shadow: 0 0 60px rgba(60, 200, 120, 0.1);
 }
 
 /* HUD */

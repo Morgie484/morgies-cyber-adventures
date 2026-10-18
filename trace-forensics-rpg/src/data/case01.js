@@ -85,7 +85,7 @@ function buildRelay() {
 
 export const CASE = {
   id: "4471",
-  name: "Operation Nightjar",
+  name: "The Pilfered Sigil",
   difficulty: "TUTORIAL",
   dcBonus: 0,
   brief:
