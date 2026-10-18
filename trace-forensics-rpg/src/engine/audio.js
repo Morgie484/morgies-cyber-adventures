@@ -82,7 +82,6 @@ class AudioEngine {
       case "select":    this.tone({ freq: 660, dur: 0.08, type: "triangle", gain: 0.25 }); break;
       case "confirm":   this.tone({ freq: 523, dur: 0.1, type: "triangle", gain: 0.25 });
                         this.tone({ freq: 784, dur: 0.12, type: "triangle", gain: 0.25, when: 0.08 }); break;
-      case "type":      this.tone({ freq: 1200 + Math.random() * 400, dur: 0.02, type: "square", gain: 0.04 }); break;
       case "enter":     this.tone({ freq: 440, dur: 0.06, type: "square", gain: 0.12 }); break;
       case "diceRoll":  this.noise({ dur: 0.5, gain: 0.12, filterFreq: 2500 }); break;
       case "diceLand":  this.tone({ freq: 180, dur: 0.1, type: "square", gain: 0.3, glideTo: 90 });

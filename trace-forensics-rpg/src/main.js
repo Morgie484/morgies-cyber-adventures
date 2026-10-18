@@ -260,12 +260,11 @@ function bindInput() {
           parts[parts.length - 1] = prefix;
           input.value = parts.join(" ");
         }
-        audio.sfx("type");
+        audio.sfx("select");
       }
       return;
     }
 
-    if (e.key.length === 1) audio.sfx("type");
     if (e.key === "Enter") {
       const raw = input.value;
       printLine(`${t.prompt()} ${raw}`, "t-dim");
