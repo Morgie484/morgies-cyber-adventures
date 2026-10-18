@@ -10,6 +10,7 @@ import { playBoot, showCharacterCreation, showDialogue, showCaseSelect, showTitl
 import { animateRoll } from "./ui/diceRoll.js";
 import { audio } from "./engine/audio.js";
 import { STATS } from "./engine/character.js";
+import { saveGame, loadGame, hasSave, clearSave, saveSummary } from "./engine/save.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -18,7 +19,13 @@ const state = {
   mode: "world", // world | terminal | dialogue | board
   terminal: null,
   activeCase: null,
+  solved: [], // array of solved case ids
 };
+
+// Persist current progress. Called at meaningful checkpoints.
+function persist() {
+  if (state.character) saveGame(state);
+}
 
 // ---------- boot & character creation ----------
 // Unlock audio on the very first interaction anywhere.
@@ -26,10 +33,29 @@ const unlockAudioOnce = () => { audio.unlock(); audio.startMusic(); window.remov
 window.addEventListener("pointerdown", unlockAudioOnce);
 window.addEventListener("keydown", unlockAudioOnce);
 
-// Title screen → boot sequence → character creation → case select → game.
-showTitleScreen(() => {
+// Title screen → (Continue | New Game) → boot → creation → case select → game.
+showTitleScreen((choice) => {
+  // handler below
   audio.unlock();
   audio.startMusic();
+
+  // Continue: restore the saved character and jump to case select.
+  if (choice === "continue") {
+    const data = loadGame();
+    if (data && data.character) {
+      state.character = data.character;
+      state.solved = data.solved || [];
+      showCaseSelect(CASES, (caseId) => {
+        state.activeCase = getCase(caseId);
+        startGame();
+      }, { solved: state.solved });
+      return;
+    }
+  }
+
+  // New Game: wipe any old save, run boot + character creation.
+  clearSave();
+  state.solved = [];
   $("boot").classList.remove("hidden");
   playBoot($("boot"), () => {
     audio.unlock();
@@ -37,13 +63,14 @@ showTitleScreen(() => {
     showCharacterCreation(({ name, backgroundId, appearance }) => {
       state.character = createCharacter(name, backgroundId);
       state.character.appearance = appearance;
+      persist();
       showCaseSelect(CASES, (caseId) => {
         state.activeCase = getCase(caseId);
         startGame();
-      });
+      }, { solved: state.solved });
     });
   });
-});
+}, saveSummary());
 
 // ---------- game ----------
 let world;
@@ -131,12 +158,13 @@ function openTerminal(host) {
     dcBonus: state.activeCase.dcBonus || 0,
     onEvidence: (ev) => {
       const added = addEvidence(state.character, { ...ev, ...evidenceMeta(ev.id) });
-      if (added) { audio.sfx("evidence"); checkCaseReady(); }
+      if (added) { audio.sfx("evidence"); checkCaseReady(); persist(); }
       return added;
     },
     onXP: (amount, reason) => {
       const levels = grantXP(state.character, amount);
       printLine(`+${amount} XP (${reason})`, "t-cyan");
+      persist();
       if (levels.length) {
         audio.sfx("levelUp");
         printLine(`LEVEL UP! You are now level ${state.character.level}. (+2 skill points — spend on the Evidence Board)`, "t-amber");
@@ -292,7 +320,7 @@ function renderBoard() {
     (c.notes.length ? `<div style="margin-top:10px;color:#ffb000">Notes:</div>` + c.notes.map((n) => `<div style="color:#cbd;font-size:12px">• ${n}</div>`).join("") : "");
 
   $("evidence-list").querySelectorAll(".sp-btn").forEach((btn) => {
-    btn.onclick = () => { if (spendStatPoint(c, btn.dataset.stat)) { audio.sfx("confirm"); renderBoard(); } };
+    btn.onclick = () => { if (spendStatPoint(c, btn.dataset.stat)) { audio.sfx("confirm"); persist(); renderBoard(); } };
   });
 
   // Case questions.
@@ -328,6 +356,8 @@ function submitCase() {
     const reward = ac.reward || (ac.difficulty === "EXPERT" ? 400 : ac.difficulty === "HARD" ? 250 : 100);
     const levels = grantXP(state.character, reward);
     if (levels.length) showLevelUp(state.character.level, levels.length * 2);
+    if (!state.solved.includes(ac.id)) state.solved.push(ac.id);
+    persist();
     const otherCases = CASES.filter((c) => c.id !== ac.id);
     verdict.innerHTML =
       `<div style="color:#39ff14;font-size:16px">✓ CASE SOLVED — ${ac.name} closed!</div>
@@ -358,6 +388,7 @@ function switchCase(id) {
   $("case-title").textContent = `CASE #${state.activeCase.id} — ${state.activeCase.name} [${state.activeCase.difficulty}]`;
   setHint(`New case loaded: ${state.activeCase.name}. Explore and gather evidence.`);
   audio.sfx("confirm");
+  persist();
 }
 
 function closeBoard() {
