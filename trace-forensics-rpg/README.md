@@ -61,14 +61,21 @@ python3 -m http.server 8000
 # then open http://localhost:8000
 ```
 
+### Play on mobile / iOS
+GREPOIRE runs in the browser, so it works on **iPhone, iPad, and Android** with no install — just open the site in Safari or Chrome. On iOS you can **Add to Home Screen** (Share → Add to Home Screen) to launch it full-screen like an app.
+
+On touch devices you get an on-screen **D-pad** (bottom-left), an **action button** ✦ plus **E**/**J** shortcuts (bottom-right), and a **quick-command bar** in the terminal so you rarely need to type. The layout is responsive, respects the notch/home-bar (safe-area insets), and disables pinch/double-tap zoom while playing.
+
 ### Controls
-- **WASD / arrow keys** — move around the world
-- **SPACE** — enter a location (blue block) or talk to an NPC (yellow dot)
-- **E** — open the Evidence Board (review clues, spend discipline points, solve the quest)
-- **J** — open the Adventurer's Codex (character sheet, quest log, evidence, world lore)
-- **M** — mute / unmute audio · **⚙** (top-right) — settings (volume, reset save)
+**Keyboard (desktop):**
+- **WASD / arrow keys** — move · **SPACE** — interact with a shrine or NPC
+- **E** — Evidence Board · **J** — Adventurer's Codex · **M** — mute · **⚙** — settings
 - **In the shell:** ↑/↓ for command history, **Tab** to complete commands & filenames
-- **ESC** — disconnect from a device / close a panel
+- **ESC** — disconnect / close a panel
+
+**Touch (mobile/iOS):**
+- **D-pad** — move · **✦** — interact · **E** / **J** buttons — Evidence / Codex
+- Tap the terminal to summon the keyboard, or use the **quick-command bar** buttons
 
 ### The loop
 1. **Create your investigator** — pick a background that sets your skills

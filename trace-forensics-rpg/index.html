@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#05070a" />
   <title>GREPOIRE — Digital Forensics Investigation</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -21,6 +25,21 @@
       <div id="hint"></div>
     </div>
 
+    <!-- Touch controls (shown only on touch devices, in world mode) -->
+    <div id="touch-controls" class="hidden">
+      <div id="dpad">
+        <button class="dpad-btn" data-dir="up" aria-label="Up">▲</button>
+        <button class="dpad-btn" data-dir="left" aria-label="Left">◀</button>
+        <button class="dpad-btn" data-dir="right" aria-label="Right">▶</button>
+        <button class="dpad-btn" data-dir="down" aria-label="Down">▼</button>
+      </div>
+      <div id="touch-actions">
+        <button id="t-action" class="t-big" aria-label="Interact">✦</button>
+        <button id="t-evidence" class="t-small" aria-label="Evidence">E</button>
+        <button id="t-codex" class="t-small" aria-label="Codex">J</button>
+      </div>
+    </div>
+
     <!-- Terminal / forensics workstation -->
     <div id="workstation" class="hidden">
       <div id="ws-header">
@@ -32,7 +51,20 @@
           <div id="term-output"></div>
           <div id="term-input-line">
             <span id="term-prompt">investigator@grepoire:~$</span>
-            <input id="term-input" autocomplete="off" spellcheck="false" />
+            <input id="term-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" />
+          </div>
+          <!-- Quick commands for touch; tap to insert/run without typing -->
+          <div id="term-quickbar" class="hidden">
+            <button data-cmd="help">help</button>
+            <button data-cmd="ls">ls</button>
+            <button data-cmd="ls -a">ls -a</button>
+            <button data-cmd="scan">scan</button>
+            <button data-cmd="cat ">cat</button>
+            <button data-cmd="decode ">decode</button>
+            <button data-cmd="recover ">recover</button>
+            <button data-cmd="sha256 ">sha256</button>
+            <button data-cmd="pcap ">pcap</button>
+            <button data-cmd="tag ">tag</button>
           </div>
         </div>
       </div>
