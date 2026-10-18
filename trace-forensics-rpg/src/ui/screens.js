@@ -10,20 +10,20 @@ import {
 } from "../engine/appearance.js";
 
 const BOOT_LINES = [
-  "GREPOIRE OS v1.4 — Forensic Investigation Platform",
+  "GREPOIRE — Grimoire of the Silent Grep",
   "a MORG systems production",
-  "booting secure shell..............[ OK ]",
-  "mounting evidence vault...........[ OK ]",
-  "loading case files................[ OK ]",
+  "attuning to the Archive...........[ OK ]",
+  "opening the scrying-vault.........[ OK ]",
+  "binding the five disciplines......[ OK ]",
   "arcane runtime (morg-core)........[ OK ]",
   "",
-  "CASE #4471 — OPERATION NIGHTJAR",
-  "Meridian Dynamics reports a confidential client list has leaked.",
-  "Your job: find out WHO, HOW, and WHEN.",
+  "THE ARCHIVE — where all data persists as magic.",
+  "You are a Data-Mage of the Order of the Silent Grep:",
+  "part detective, part sorcerer, sworn to recover buried truth.",
   "",
-  ">> This is a training case. The game will guide you. <<",
+  "Your first commission is a training quest. The Order will guide you.",
   "",
-  "[ click anywhere to begin ]",
+  "[ click anywhere to begin your initiation ]",
 ];
 
 export function playBoot(el, onDone) {
@@ -319,4 +319,148 @@ export function showLevelUp(level, statPoints) {
     overlay.classList.add("fade-out");
     setTimeout(() => overlay.remove(), 400);
   }, 1900);
+}
+
+// The Adventurer's Codex — an in-game journal with tabs: the character sheet,
+// the quest log, collected evidence/notes, and the world lore.
+export function showCodex({ character, cases, solved, activeCaseId, lore, onClose }) {
+  const { WORLD, CODEX_LORE, DISCIPLINES, FACTIONS, rankTitle } = lore;
+  const solvedSet = new Set(solved || []);
+  const overlay = document.createElement("div");
+  overlay.className = "codex-overlay";
+  overlay.innerHTML = `
+    <div class="codex">
+      <div class="codex-head">
+        <span class="codex-title">⚜ THE ADVENTURER'S CODEX</span>
+        <button class="codex-close">✕ Close</button>
+      </div>
+      <div class="codex-tabs">
+        <button data-tab="sheet" class="active">Character</button>
+        <button data-tab="quests">Quest Log</button>
+        <button data-tab="evidence">Evidence</button>
+        <button data-tab="lore">World Codex</button>
+      </div>
+      <div class="codex-body"></div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const body = overlay.querySelector(".codex-body");
+  const mod = (v) => { const m = Math.floor((v - 10) / 2); return (m >= 0 ? "+" : "") + m; };
+
+  const renderSheet = () => {
+    const c = character;
+    body.innerHTML = `
+      <div class="codex-sheet">
+        <div class="cs-name">${c.name}</div>
+        <div class="cs-rank">${rankTitle(c.level)} · ${c.backgroundName}</div>
+        <div class="cs-xp">Level ${c.level} · ${c.xp} XP${c.statPoints ? ` · <span style="color:#39ff14">${c.statPoints} unspent discipline points</span>` : ""}</div>
+        <div class="cs-boon">✦ Boon: ${c.perk}</div>
+        <table class="cs-table">
+          <tr><th>Discipline</th><th>Score</th><th>Mod</th><th>Arcane School</th></tr>
+          ${Object.entries(c.stats).map(([k, v]) =>
+            `<tr><td>${k}</td><td>${v}</td><td>${mod(v)}</td><td class="cs-school">${DISCIPLINES[k] ? DISCIPLINES[k].school + " — " + DISCIPLINES[k].flavor : ""}</td></tr>`
+          ).join("")}
+        </table>
+      </div>`;
+  };
+
+  const renderQuests = () => {
+    body.innerHTML = `<div class="codex-section-title">Quest Log — by commission of ${WORLD.order}</div>` +
+      cases.map((c) => {
+        const done = solvedSet.has(c.id);
+        const active = c.id === activeCaseId;
+        const status = done ? `<span class="q-done">✓ COMPLETE</span>` : active ? `<span class="q-active">◉ ACTIVE</span>` : `<span class="q-open">○ AVAILABLE</span>`;
+        return `<div class="codex-quest ${done ? "done" : ""}">
+          <div class="q-head"><span class="q-name">#${c.id} — ${c.name}</span> ${status} <span class="q-diff">${c.difficulty}</span></div>
+          ${c.questGiver ? `<div class="q-giver">Commissioned by ${c.questGiver}</div>` : ""}
+          <div class="q-brief">${c.brief}</div>
+        </div>`;
+      }).join("");
+  };
+
+  const renderEvidence = () => {
+    const c = character;
+    body.innerHTML =
+      `<div class="codex-section-title">Evidence sealed for the current quest</div>` +
+      (c.evidence && c.evidence.length
+        ? c.evidence.map((e) => `<div class="codex-ev"><span class="ev-id">[${e.id}] ${e.host || ""}</span><div>${e.name} — ${e.desc || e.summary || ""}</div></div>`).join("")
+        : `<div class="codex-dim">No evidence sealed yet. Explore the locations and 'tag' key artifacts.</div>`) +
+      (c.notes && c.notes.length
+        ? `<div class="codex-section-title">Field notes</div>` + c.notes.map((n) => `<div class="codex-note">• ${n}</div>`).join("")
+        : "");
+  };
+
+  const renderLore = () => {
+    body.innerHTML = `
+      <div class="codex-section-title">${WORLD.realm} — a primer</div>
+      <div class="lore-intro">${WORLD.intro}</div>
+      <div class="codex-section-title">Arcane glossary</div>
+      ${CODEX_LORE.map((l) => `<div class="lore-entry"><b>${l.term}</b> — ${l.text}</div>`).join("")}
+      <div class="codex-section-title">Factions of the Archive</div>
+      ${FACTIONS.map((f) => `<div class="lore-entry"><b>${f.name}</b> <span class="lore-align">(${f.align})</span> — ${f.text}</div>`).join("")}
+    `;
+  };
+
+  const tabs = { sheet: renderSheet, quests: renderQuests, evidence: renderEvidence, lore: renderLore };
+  overlay.querySelectorAll(".codex-tabs button").forEach((btn) => {
+    btn.onclick = () => {
+      overlay.querySelectorAll(".codex-tabs button").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      audio.sfx("select");
+      tabs[btn.dataset.tab]();
+    };
+  });
+
+  const close = () => { overlay.remove(); onClose?.(); };
+  overlay.querySelector(".codex-close").onclick = close;
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+
+  renderSheet();
+  return { close };
+}
+
+// Settings panel — volume sliders + reset save. `audio` is the engine,
+// `onResetSave` wipes the save and returns to the title.
+export function showSettings({ audio, onResetSave, onClose }) {
+  const vols = audio.getVolumes ? audio.getVolumes() : { master: 0.6, music: 0.6, sfx: 0.5 };
+  const overlay = document.createElement("div");
+  overlay.className = "settings-overlay";
+  overlay.innerHTML = `
+    <div class="settings-box">
+      <div class="settings-head"><span>⚙ SETTINGS</span><button class="settings-close">✕</button></div>
+      <div class="setting-row">
+        <label>Master volume</label>
+        <input type="range" min="0" max="1" step="0.05" value="${vols.master}" data-vol="master" />
+      </div>
+      <div class="setting-row">
+        <label>Music volume</label>
+        <input type="range" min="0" max="1" step="0.05" value="${vols.music}" data-vol="music" />
+      </div>
+      <div class="setting-row">
+        <label>Sound effects</label>
+        <input type="range" min="0" max="1" step="0.05" value="${vols.sfx}" data-vol="sfx" />
+      </div>
+      <hr class="settings-hr" />
+      <button class="settings-reset">⚠ Reset save &amp; return to title</button>
+      <div class="settings-note">This permanently deletes your saved character and progress.</div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  overlay.querySelectorAll("input[data-vol]").forEach((sl) => {
+    sl.oninput = () => {
+      const v = parseFloat(sl.value);
+      if (sl.dataset.vol === "master") audio.setMasterVolume(v);
+      if (sl.dataset.vol === "music") audio.setMusicVolume(v);
+      if (sl.dataset.vol === "sfx") { audio.setSfxVolume(v); audio.sfx("select"); }
+    };
+  });
+
+  const close = () => { overlay.remove(); onClose?.(); };
+  overlay.querySelector(".settings-close").onclick = close;
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+  overlay.querySelector(".settings-reset").onclick = () => {
+    overlay.querySelector(".settings-reset").textContent = "Click again to confirm reset";
+    overlay.querySelector(".settings-reset").onclick = () => { close(); onResetSave?.(); };
+  };
+  return { close };
 }

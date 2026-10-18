@@ -335,3 +335,90 @@ button.primary {
 .levelup-title { color: var(--amber); font-size: 30px; font-weight: bold; letter-spacing: 6px; text-shadow: 0 0 16px rgba(255,176,0,0.7); }
 .levelup-level { color: #fff; font-size: 20px; margin-top: 6px; }
 .levelup-sub { color: var(--green); font-size: 13px; margin-top: 12px; }
+
+/* ---- Adventurer's Codex (journal) ---- */
+.codex-overlay {
+  position: fixed; inset: 0; z-index: 70;
+  background: rgba(5, 7, 10, 0.92);
+  display: flex; align-items: center; justify-content: center;
+  animation: diceFadeIn 0.2s ease;
+}
+.codex {
+  width: 90%; max-width: 760px; height: 82%;
+  background: #0c1118;
+  border: 1px solid #3a2c55;
+  box-shadow: 0 0 60px rgba(106, 61, 214, 0.3);
+  display: flex; flex-direction: column;
+  font-family: var(--mono);
+}
+.codex-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; border-bottom: 1px solid #2a2140;
+}
+.codex-title { color: #c9a6ff; letter-spacing: 2px; }
+.codex-close, .settings-close {
+  background: transparent; border: 1px solid var(--dim); color: var(--dim);
+  font-family: var(--mono); padding: 4px 10px; cursor: pointer;
+}
+.codex-close:hover { color: var(--red); border-color: var(--red); }
+.codex-tabs { display: flex; gap: 4px; padding: 10px 16px 0; }
+.codex-tabs button {
+  background: #0b131c; border: 1px solid #2a2140; border-bottom: none;
+  color: #8aa; font-family: var(--mono); padding: 8px 14px; cursor: pointer;
+}
+.codex-tabs button.active { color: #c9a6ff; background: #140e22; border-color: #4a3a6a; }
+.codex-body { flex: 1; overflow-y: auto; padding: 16px; border-top: 1px solid #2a2140; }
+
+.codex-sheet .cs-name { color: #fff; font-size: 22px; }
+.cs-rank { color: #c9a6ff; margin-top: 2px; }
+.cs-xp { color: var(--cyan); font-size: 13px; margin-top: 4px; }
+.cs-boon { color: var(--amber); font-size: 13px; margin: 10px 0; }
+.cs-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+.cs-table th { color: var(--green); text-align: left; padding: 6px 8px; border-bottom: 1px solid #2a2140; }
+.cs-table td { padding: 6px 8px; border-bottom: 1px solid #161d28; }
+.cs-school { color: var(--dim); font-size: 12px; }
+
+.codex-section-title { color: var(--amber); letter-spacing: 1px; margin: 14px 0 8px; font-size: 13px; }
+.codex-quest { border: 1px solid #22303d; padding: 10px 12px; margin-bottom: 8px; background: #0b131c; }
+.codex-quest.done { border-color: #1f3a22; }
+.q-head { display: flex; align-items: center; gap: 10px; }
+.q-name { color: #26d9ff; font-weight: bold; }
+.q-done { color: var(--green); font-size: 11px; }
+.q-active { color: var(--amber); font-size: 11px; }
+.q-open { color: var(--dim); font-size: 11px; }
+.q-diff { margin-left: auto; color: #c9a6ff; font-size: 11px; border: 1px solid #3a2c55; padding: 1px 6px; }
+.q-giver { color: var(--dim); font-size: 12px; margin: 4px 0; font-style: italic; }
+.q-brief { color: #9fb0bd; font-size: 12.5px; line-height: 1.5; margin-top: 4px; }
+
+.codex-ev { border: 1px solid #22303d; padding: 8px 10px; margin-bottom: 6px; background: #0b131c; font-size: 13px; }
+.ev-id { color: var(--cyan); font-size: 11px; }
+.codex-note { color: #cbd; font-size: 12.5px; margin: 3px 0; }
+.codex-dim { color: var(--dim); }
+.lore-intro { color: #b9c6d2; line-height: 1.6; font-size: 13.5px; }
+.lore-entry { color: #9fb0bd; font-size: 13px; line-height: 1.5; margin: 6px 0; }
+.lore-entry b { color: #c9a6ff; }
+.lore-align { color: var(--dim); font-size: 11px; }
+
+/* ---- Settings panel ---- */
+.settings-overlay {
+  position: fixed; inset: 0; z-index: 75;
+  background: rgba(5, 7, 10, 0.9);
+  display: flex; align-items: center; justify-content: center;
+  animation: diceFadeIn 0.2s ease;
+}
+.settings-box {
+  width: 90%; max-width: 420px;
+  background: #0f1621; border: 1px solid #22303d; padding: 20px;
+  font-family: var(--mono); color: #d6e1e8;
+}
+.settings-head { display: flex; justify-content: space-between; align-items: center; color: var(--cyan); margin-bottom: 14px; letter-spacing: 2px; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; margin: 12px 0; }
+.setting-row label { color: #9fb0bd; font-size: 13px; }
+.setting-row input[type="range"] { width: 200px; accent-color: #39ff14; }
+.settings-hr { border: none; border-top: 1px solid #22303d; margin: 16px 0; }
+.settings-reset {
+  width: 100%; background: transparent; border: 1px solid var(--red); color: var(--red);
+  font-family: var(--mono); padding: 10px; cursor: pointer;
+}
+.settings-reset:hover { background: rgba(255, 75, 75, 0.1); }
+.settings-note { color: var(--dim); font-size: 11px; margin-top: 8px; text-align: center; }

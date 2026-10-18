@@ -5,6 +5,7 @@ import { VDir, isDir, isFile } from "./filesystem.js";
 import { pseudoSha256, extractStrings, hexdump, rot, tryBase64Decode } from "./crypto.js";
 import { skillCheck, isSuccess, DC, CheckResult } from "./dice.js";
 import { modFor } from "./character.js";
+import { SPELL_ALIASES, DISCIPLINES, rankTitle } from "../data/lore.js";
 
 // Colored-line helpers. Returns {text, cls}.
 const line = (text, cls = "") => ({ text, cls });
@@ -22,6 +23,23 @@ export class Terminal {
     this.history = [];
   }
 
+  // Candidate completions for Tab: command names + spellwords (for the first
+  // token), or file/dir names in the current directory (for later tokens).
+  completions(input) {
+    const parts = input.split(/\s+/);
+    const typingCommand = parts.length <= 1;
+    if (typingCommand) {
+      const names = [...Object.keys(this.commands), ...Object.keys(SPELL_ALIASES)];
+      const frag = parts[0] || "";
+      return names.filter((n) => n.startsWith(frag)).sort();
+    }
+    const frag = parts[parts.length - 1] || "";
+    const names = [...this.cwd.children.values()]
+      .filter((n) => isFile(n) || isDir(n))
+      .map((n) => n.name);
+    return names.filter((n) => n.startsWith(frag)).sort();
+  }
+
   prompt() {
     return `investigator@${this.device.host}:${this.path.join("/")}$`;
   }
@@ -32,7 +50,10 @@ export class Terminal {
     const input = raw.trim();
     if (!input) return [];
     this.history.push(input);
-    const [cmd, ...args] = input.split(/\s+/);
+    let [cmd, ...args] = input.split(/\s+/);
+    // Spell aliases: 'scry' casts 'scan', 'banish' casts 'decode', etc.
+    const casted = SPELL_ALIASES[cmd];
+    if (casted) cmd = casted;
     const fn = this.commands[cmd];
     if (!fn) {
       return [
@@ -68,23 +89,28 @@ export class Terminal {
   get commands() {
     return {
       help: () => [
-        line("GREPOIRE FORENSIC SHELL — available commands:", "t-cyan"),
+        line("GREPOIRE FORENSIC SHELL — grimoire of the Silent Grep:", "t-cyan"),
         line(""),
         line("  ls [-a]            list files   (-a also shows hidden files)"),
         line("  cat <file>         read a file's contents"),
         line("  strings <file>     pull readable text out of a binary file"),
         line("  hexdump <file>     view raw bytes (offset / hex / ascii)"),
-        line("  sha256 <file>      compute a file's fingerprint (hash)"),
-        line("  verify <file> <hash>  check a file against a known hash"),
-        line("  scan               look closely for DELETED or hidden data"),
-        line("  recover <file>     restore a deleted file you've found"),
-        line("  decode <file>      try to decode scrambled/encoded text"),
+        line("  sha256 <file>      read a file's true-name SIGIL (hash)"),
+        line("  verify <file> <hash>  check a file against a known sigil"),
+        line("  scan               scry for ECHOES (deleted) or hidden sigils"),
+        line("  recover <file>     call an ECHO back (restore a deleted file)"),
+        line("  decode <file>      BANISH a ward (decode sealed/encoded text)"),
         line("  grep <word> <file> search for a word inside a file"),
         line("  log <file>         pretty-print a log file as a timeline"),
-        line("  tag <file>         mark a file as EVIDENCE for the case"),
-        line("  whoami / stats     show your investigator stats"),
+        line("  pcap <file>        scry an AETHER-STREAM (packet capture)"),
+        line("     pcap <file> follow <#>   reassemble one flow"),
+        line("  tag <file>         seal a file as EVIDENCE for the quest"),
+        line("  whoami / stats     commune with your own spirit (your sheet)"),
         line("  clear              clear the screen"),
         line("  exit               disconnect from this device"),
+        line(""),
+        line("  ✦ SPELLWORDS: scry=scan · banish=decode · mend=recover", "t-cyan"),
+        line("    divine=sha256 · reveal=ls · behold=cat · commune=stats", "t-cyan"),
         line(""),
         line("New here? Try 'ls' first, then 'cat' a file that looks interesting.", "t-amber"),
       ],
@@ -105,12 +131,18 @@ export class Terminal {
       whoami: () => this.commands.stats(),
       stats: () => {
         const c = this.character;
-        const out = [line(`${c.name} — ${c.backgroundName} (Level ${c.level}, XP ${c.xp})`, "t-cyan")];
+        const out = [
+          line(`✦ ${c.name}, ${rankTitle(c.level)} of the Silent Grep`, "t-amber"),
+          line(`  ${c.backgroundName} · Level ${c.level} · ${c.xp} XP`, "t-cyan"),
+          line(""),
+          line("  DISCIPLINE     SCORE  MOD  SCHOOL"),
+        ];
         for (const [k, v] of Object.entries(c.stats)) {
           const mod = Math.floor((v - 10) / 2);
-          out.push(line(`  ${k.padEnd(11)} ${String(v).padStart(2)}  (${mod >= 0 ? "+" : ""}${mod})`));
+          const school = DISCIPLINES[k] ? DISCIPLINES[k].school : "";
+          out.push(line(`  ${k.padEnd(13)} ${String(v).padStart(3)}  ${(mod >= 0 ? "+" : "") + mod}   ${school}`));
         }
-        out.push(line(`  Perk: ${c.perk}`, "t-amber"));
+        out.push(line(`  Boon: ${c.perk}`, "t-amber"));
         return out;
       },
 
@@ -281,6 +313,48 @@ export class Terminal {
           ...rows.map((r) => line("  " + r)),
           line(`  (Read top-to-bottom. Look for the odd one out.)`, "t-dim"),
         ];
+      },
+
+      // Inspect a packet capture. `pcap <file>` lists packets; a TECH check
+      // flags anomalies. `pcap <file> follow <n>` reassembles that stream.
+      pcap: async (args) => {
+        const f = this.resolveFile(args[0]);
+        if (!f) return [line(`pcap: ${args[0] || "<file>"}: no such file`, "t-red")];
+        if (!f.packets) return [line(`pcap: ${f.name} is not a packet capture.`, "t-amber")];
+
+        // follow a stream
+        if (args[1] === "follow") {
+          const n = parseInt(args[2], 10);
+          const pkt = f.packets[n - 1];
+          if (!pkt) return [line(`pcap: no packet #${args[2]} in ${f.name}.`, "t-red")];
+          const res = await this.doCheck("LOGIC", DC.MEDIUM, "Reassemble stream", { tag: "crypto" });
+          const out = [this.checkLine(res, "LOGIC")];
+          if (!isSuccess(res.result)) {
+            out.push(line("Stream reassembly failed — packets out of order. Try again.", "t-amber"));
+            return out;
+          }
+          out.push(line(`--- follow TCP stream (packet #${n}) ---`, "t-cyan"));
+          (pkt.payload || "(no application-layer payload)").split("\n").forEach((l) => out.push(line("  " + l)));
+          this.onXP?.(20, `followed stream in ${f.name}`);
+          return out;
+        }
+
+        // list view, with a PERCEPTION check to surface the suspicious packet
+        const res = await this.doCheck("PERCEPTION", DC.MEDIUM, "Traffic analysis", { tag: "scan" });
+        const out = [this.checkLine(res, "PERCEPTION")];
+        out.push(line(`Packet capture — ${f.name} (${f.packets.length} packets):`, "t-cyan"));
+        out.push(line("  #   TIME      SRC → DST                PROTO  INFO"));
+        f.packets.forEach((p, i) => {
+          const suspicious = p.flag && isSuccess(res.result);
+          const row = `  ${String(i + 1).padStart(2)}  ${p.time}  ${(p.src + " → " + p.dst).padEnd(22)}  ${(p.proto || "").padEnd(5)}  ${p.info || ""}`;
+          out.push(line(row + (suspicious ? "   ⚠" : ""), suspicious ? "t-amber" : ""));
+        });
+        if (isSuccess(res.result) && f.packets.some((p) => p.flag)) {
+          out.push(line("  ⚠ One flow looks off — try 'pcap " + f.name + " follow <#>' to read it.", "t-amber"));
+        } else {
+          out.push(line("  (Nothing jumps out yet — raise PERCEPTION or look again.)", "t-dim"));
+        }
+        return out;
       },
 
       tag: (args) => {
