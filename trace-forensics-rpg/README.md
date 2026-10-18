@@ -15,7 +15,21 @@ at a time, every command self-documents, and you can never permanently fail —
 with **harder cases** (encrypted data, hash-tampering, multi-hop trails) mixed in.
 
 ## The world
-GREPOIRE is set in **the Archive** — a realm between worlds where all data persists as living magic. You play a **Data-Mage of the Order of the Silent Grep**: part detective, part sorcerer. Devices are shards of the Archive; encryption is a **ward** you *banish*; deleted files are **echoes** you *mend*; a hash is a file's **true-name sigil**; network traffic is an **aether-stream** you *scry*. Cases are **quests** commissioned by the Order, and your five skills are **arcane disciplines** (schools of magic). Read the full lore in the in-game Codex ([J]).
+GREPOIRE is set in **the Archive** — an enchanted wood between worlds where all data persists as living magic. You explore a **mystical forest** overworld (glowing shrine-stones, cloaked wanderers, drifting fireflies) as a **Data-Mage of the Order of the Silent Grep**: part detective, part sorcerer. Devices are shrines in the clearings; encryption is a **ward** you *banish*; deleted files are **echoes** you *mend*; a hash is a file's **true-name sigil**; network traffic is an **aether-stream** you *scry*. Cases are **quests** commissioned by the Order, and your five skills are **arcane disciplines** (schools of magic). Read the full lore in the in-game Codex ([J]).
+
+### Classes
+Six classes in the Order, each with its own discipline spread and a signature boon:
+| Class | Origin | Boon |
+|---|---|---|
+| **Warden of Seals** | ex-cybercrime investigator | sealed evidence is unchallengeable |
+| **Shadow Revenant** | reformed ward-breaker | +2 vs. attacker tooling |
+| **Rune-Scholar** | cloistered cryptomancer | +2 on decode/crypto |
+| **Aether-Seer** | clairvoyant stream-reader | +2 on scrying (scan/traffic) |
+| **Silver-Tongue Bard** | wandering loremonger | +2 on SOCIAL confrontations |
+| **Clockwork Artificer** | tinker-mage | +2 on TECH (recover/reassemble) |
+
+### Quests
+`The Pilfered Sigil` (Tutorial) · `The Curse of the Hollow Coin` (Hard) · `The Masque of the Revenant` (Expert) · `Song of the Null Choir` (Expert, packet-capture).
 
 ## Features
 - **Deep D&D world** — lore codex, faction bible, arcane re-skin of every mechanic, rank titles per level (Initiate → Grand Magus of the Archive), and **spellword aliases** you can cast in the shell: `scry`=scan, `banish`=decode, `mend`=recover, `divine`=sha256, `reveal`=ls, `behold`=cat, `commune`=stats.
@@ -28,11 +42,12 @@ GREPOIRE is set in **the Archive** — a realm between worlds where all data per
 - **Animated dice rolls** — a tumbling d20 lands on your result with success/crit flair and sound.
 - **Level-up celebration** — a burst animation announces each new level and the skill points you earned.
 - **Customizable wizard characters** — pick robe color, hat, magic focus, aura, and skin; your look appears on the overworld avatar and in creation.
-- **Three cases, scaling difficulty:**
-  - `Operation Nightjar` — **TUTORIAL** (learn the tools)
-  - `Hollow Ledger` — **HARD** (hash-tamper detection, a hidden backdoor, a multi-hop trail)
-  - `Silent Quorum` — **EXPERT** (a frame-up to see through, a tampered log, chained `base64 → ROT13` decoding, and a confession gated behind two pieces of evidence)
-  - `dcBonus` raises every skill-check DC per case; pick from the case-select screen, and solving one offers the next.
+- **Four quests, scaling difficulty:**
+  - `The Pilfered Sigil` — **TUTORIAL** (learn the tools)
+  - `The Curse of the Hollow Coin` — **HARD** (hash-tamper detection, a hidden backdoor, a multi-hop trail)
+  - `The Masque of the Revenant` — **EXPERT** (a frame-up to see through, a tampered log, chained `base64 → ROT13` decoding, and a confession gated behind two pieces of evidence)
+  - `Song of the Null Choir` — **EXPERT** (packet-capture: scry an aether-stream, follow the tainted flow)
+  - `dcBonus` raises every skill-check DC per quest; pick from the case-select screen, and solving one offers the next.
 - **Procedural audio** — ambient arcane music + SFX for movement, typing, dice, evidence, success/failure, and level-ups. Toggle with the on-screen button or **M**. No audio files required.
 
 ## How to play
@@ -94,10 +109,10 @@ src/
     screens.js        Boot, character creation, case select, dialogue, evidence board
     diceRoll.js       Animated d20 roll popup
   data/
-    case01.js         "Operation Nightjar" — TUTORIAL case
-    case02.js         "Hollow Ledger" — HARD case (tamper detection, backdoor, insider)
-    case03.js         "Silent Quorum" — EXPERT case (frame-up, chained decoding, 2-evidence gate)
-    case04.js         "The Whispering Aether" — EXPERT packet-capture quest (D&D-framed)
+    case01.js         "The Pilfered Sigil" — TUTORIAL quest
+    case02.js         "The Curse of the Hollow Coin" — HARD quest (tamper detection, backdoor, insider)
+    case03.js         "The Masque of the Revenant" — EXPERT quest (frame-up, chained decoding, 2-evidence gate)
+    case04.js         "Song of the Null Choir" — EXPERT packet-capture quest (D&D-framed)
     cases.js          Case registry
     lore.js           World bible: realm, order, disciplines, factions, spellwords, rank titles
 ```

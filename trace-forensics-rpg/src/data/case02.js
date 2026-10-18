@@ -46,7 +46,7 @@ function buildAuth() {
 
 export const CASE_HOLLOW_LEDGER = {
   id: "5520",
-  name: "Hollow Ledger",
+  name: "The Curse of the Hollow Coin",
   difficulty: "HARD",
   brief:
     "Phantom transactions drain 0.5% from every payment. A deploy service " +

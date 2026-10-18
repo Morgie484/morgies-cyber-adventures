@@ -55,8 +55,8 @@ export function showCharacterCreation(onConfirm) {
 
   // static shell (built once so inputs keep focus/state)
   overlay.innerHTML = `
-    <h1 style="color:#ffb000;letter-spacing:2px;margin-bottom:4px">CREATE YOUR DATA-MAGE</h1>
-    <p style="color:#5a6b7a;margin-top:0">Part investigator, part arcane hacker. Choose a background (sets skills) and customize your look.</p>
+    <h1 style="color:#ffb000;letter-spacing:2px;margin-bottom:4px">FORGE YOUR DATA-MAGE</h1>
+    <p style="color:#5a6b7a;margin-top:0">Choose your <b style="color:#c9a6ff">class</b> in the Order of the Silent Grep (it sets your disciplines &amp; boon), then customize your look.</p>
     <div style="display:flex;gap:24px;flex-wrap:wrap">
       <div style="flex:1;min-width:320px">
         <label style="color:#39ff14">Codename</label><br/>
@@ -119,8 +119,9 @@ export function showCharacterCreation(onConfirm) {
       card.style.cssText =
         `flex:1;min-width:140px;border:1px solid ${active ? "#39ff14" : "#22303d"};background:${active ? "#0c1a10" : "#0b131c"};padding:10px;cursor:pointer`;
       card.innerHTML = `<div style="color:#26d9ff;font-weight:bold;font-size:13px">${bg.name}</div>
+        ${bg.role ? `<div style="color:#c9a6ff;font-size:10px;font-style:italic;margin-top:2px">${bg.role}</div>` : ""}
         <div style="color:#8aa;margin:6px 0;font-size:11px">${bg.blurb}</div>
-        <div style="color:#ffb000;font-size:11px">Perk: ${bg.perk}</div>`;
+        <div style="color:#ffb000;font-size:11px">Boon: ${bg.perk}</div>`;
       card.onclick = () => { chosen = id; audio.sfx("select"); renderBgs(); renderStats(); };
       bgWrap.appendChild(card);
     }

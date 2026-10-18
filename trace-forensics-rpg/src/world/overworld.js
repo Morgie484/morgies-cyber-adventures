@@ -5,29 +5,31 @@ import { drawCharacter } from "../engine/appearance.js";
 
 const TILE = 32;
 
-// Map legend: . grass/floor  # wall  road  L location door  N npc
-// Each location door links to a device host; each npc to a dialogue id.
+// Map legend: '.' forest-floor clearing   '#' dense trees (impassable).
+// An enchanted-wood layout: open glades threaded by tree lines, ringed by
+// forest. Locations are placed in clearings; a few tree clusters break it up.
 const MAP = [
   "####################",
-  "#..................#",
-  "#..LLL....NN....LLL.#",
-  "#..LLL..........LLL.#",
-  "#..LLL....##....LLL.#",
+  "#...####......####.#",
+  "#...#..............#",
+  "#..........##......#",
+  "#...#......##...#..#",
+  "#...#..............#",
+  "#.......####.......#",
+  "#..#...............#",
+  "#..#......##....##.#",
   "#.........##.......#",
-  "#..................#",
-  "#....NN.......LLL...#",
-  "#.............LLL...#",
-  "#.............LLL...#",
-  "#..................#",
+  "#....##............#",
   "####################",
 ];
 
-// Predefined map slots to place a case's locations and NPCs onto.
+// Predefined forest-clearing slots to place a case's shrines (locations) and
+// wanderers (NPCs) onto. All land on open floor in the map above.
 const LOCATION_SLOTS = [
-  { x: 4, y: 3 }, { x: 16, y: 3 }, { x: 14, y: 8 }, { x: 4, y: 8 },
+  { x: 2, y: 2 }, { x: 16, y: 2 }, { x: 15, y: 5 }, { x: 3, y: 9 },
 ];
 const NPC_SLOTS = [
-  { x: 9, y: 2 }, { x: 5, y: 7 }, { x: 15, y: 6 }, { x: 10, y: 9 },
+  { x: 9, y: 5 }, { x: 6, y: 7 }, { x: 16, y: 7 }, { x: 11, y: 10 },
 ];
 
 export class Overworld {
@@ -56,6 +58,15 @@ export class Overworld {
     }));
 
     this.nearby = null; // {type:'location'|'npc', data}
+
+    // Drifting fireflies / glowing spores for forest atmosphere.
+    this.fireflies = Array.from({ length: 22 }, () => ({
+      x: Math.random() * this.canvas.width,
+      y: Math.random() * this.canvas.height,
+      spd: 0.2 + Math.random() * 0.5,
+      phase: Math.random() * Math.PI * 2,
+      size: 1 + Math.random() * 1.5,
+    }));
   }
 
   tileAt(px, py) {
@@ -110,49 +121,104 @@ export class Overworld {
     this.nearby = null;
   }
 
+  // Deterministic pseudo-random in [0,1) seeded by tile coords (stable decor).
+  rand(x, y) {
+    const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+    return n - Math.floor(n);
+  }
+
+  drawTree(ctx, px, py) {
+    // canopy — layered circles in forest greens
+    const cx = px + TILE / 2;
+    ctx.fillStyle = "#143d22";
+    ctx.beginPath(); ctx.arc(cx, py + 16, 15, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#1c5230";
+    ctx.beginPath(); ctx.arc(cx - 6, py + 12, 10, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 6, py + 14, 11, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#246b3d";
+    ctx.beginPath(); ctx.arc(cx, py + 10, 9, 0, Math.PI * 2); ctx.fill();
+  }
+
   draw() {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // tiles
+    // ground: mossy forest floor with a soft vertical gradient
+    const grad = ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+    grad.addColorStop(0, "#0c1a12");
+    grad.addColorStop(1, "#0a1410");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+    // floor tiles + scattered foliage; trees for walls
     for (let r = 0; r < MAP.length; r++) {
       for (let c = 0; c < MAP[r].length; c++) {
         const ch = MAP[r][c];
-        ctx.fillStyle = ch === "#" ? "#16222e" : "#0d141c";
-        ctx.fillRect(c * TILE, r * TILE, TILE, TILE);
-        ctx.strokeStyle = "#0a0f15";
-        ctx.strokeRect(c * TILE, r * TILE, TILE, TILE);
+        const px = c * TILE, py = r * TILE;
+        if (ch === "#") {
+          this.drawTree(ctx, px, py);
+        } else {
+          // mottled moss patches
+          const t = this.rand(c, r);
+          ctx.fillStyle = t > 0.5 ? "#0e1e14" : "#0b1810";
+          ctx.fillRect(px, py, TILE, TILE);
+          // little grass tufts / pebbles / flowers, stable per tile
+          if (t > 0.82) {
+            ctx.fillStyle = "#1c5230";
+            ctx.fillRect(px + 6 + t * 10, py + 20, 2, 5);
+            ctx.fillRect(px + 9 + t * 10, py + 18, 2, 7);
+          } else if (t > 0.72) {
+            ctx.fillStyle = "#3a2c55";
+            ctx.beginPath(); ctx.arc(px + 10 + t * 12, py + 14 + t * 8, 2, 0, Math.PI * 2); ctx.fill();
+          }
+        }
       }
     }
 
-    // locations
+    // locations: glowing arcane shrine-stones in a clearing
     for (const loc of this.locations) {
       const { cx, cy } = this.centerOf(loc);
+      const pulse = 0.5 + 0.5 * Math.sin(this.frame / 20 + cx);
+      // glow aura
+      ctx.globalAlpha = 0.18 + 0.1 * pulse;
       ctx.fillStyle = "#26d9ff";
-      ctx.fillRect(cx - 12, cy - 12, 24, 24);
-      ctx.fillStyle = "#06121a";
-      ctx.font = "16px monospace";
+      ctx.beginPath(); ctx.arc(cx, cy, 22, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+      // standing stone
+      ctx.fillStyle = "#1a2b38";
+      ctx.fillRect(cx - 9, cy - 13, 18, 26);
+      ctx.strokeStyle = "#26d9ff";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(cx - 9, cy - 13, 18, 26);
+      // glowing rune
+      ctx.fillStyle = `rgba(79,240,224,${0.6 + 0.4 * pulse})`;
+      ctx.font = "13px monospace";
       ctx.textAlign = "center";
-      ctx.fillText("◼", cx, cy + 5);
+      ctx.fillText("ᛝ", cx, cy + 5);
+      // label banner
       ctx.fillStyle = "#9fd8e8";
       ctx.font = "10px monospace";
-      ctx.fillText(loc.label, cx, cy - 16);
+      ctx.fillText(loc.label, cx, cy - 20);
     }
 
-    // npcs
+    // npcs: lantern-lit wanderers of the wood
     for (const n of this.npcs) {
       const { cx, cy } = this.centerOf(n);
-      ctx.fillStyle = "#ffb000";
-      ctx.beginPath();
-      ctx.arc(cx, cy, 11, 0, Math.PI * 2);
-      ctx.fill();
+      const bob = Math.sin(this.frame / 15 + cx) * 1.5;
+      ctx.globalAlpha = 0.16;
+      ctx.fillStyle = "#ffcf6b";
+      ctx.beginPath(); ctx.arc(cx, cy + bob, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+      // cloaked figure
+      ctx.fillStyle = "#6b4a1c";
+      ctx.beginPath(); ctx.arc(cx, cy + bob, 10, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#1a1200";
       ctx.font = "13px monospace";
       ctx.textAlign = "center";
-      ctx.fillText("!", cx, cy + 5);
+      ctx.fillText("?", cx, cy + 5 + bob);
       ctx.fillStyle = "#ffd98a";
       ctx.font = "10px monospace";
-      ctx.fillText(n.label, cx, cy - 15);
+      ctx.fillText(n.label, cx, cy - 15 + bob);
     }
 
     // player — rendered as the customized data-mage
@@ -165,12 +231,25 @@ export class Overworld {
       ctx.fillRect(p.x, p.y, p.w, p.h);
     }
 
+    // drifting fireflies / spores (atmosphere, drawn above everything)
+    for (const f of this.fireflies) {
+      f.y -= f.spd;
+      f.x += Math.sin(this.frame / 40 + f.phase) * 0.4;
+      if (f.y < -4) { f.y = this.canvas.height + 4; f.x = Math.random() * this.canvas.width; }
+      const glow = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(this.frame / 12 + f.phase));
+      ctx.globalAlpha = glow;
+      ctx.fillStyle = "#b8ff8a";
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
     // interaction prompt
     if (this.nearby) {
-      const label = this.nearby.type === "location"
-        ? `Enter ${this.nearby.data.label}`
-        : `Talk to ${this.nearby.data.label}`;
-      ctx.fillStyle = "#39ff14";
+      const isShrine = this.nearby.type === "location";
+      const label = isShrine
+        ? `Commune with ${this.nearby.data.label}`
+        : `Speak with ${this.nearby.data.label}`;
+      ctx.fillStyle = "#b8ff8a";
       ctx.font = "14px monospace";
       ctx.textAlign = "center";
       ctx.fillText(`[ SPACE ] ${label}`, this.canvas.width / 2, this.canvas.height - 18);
