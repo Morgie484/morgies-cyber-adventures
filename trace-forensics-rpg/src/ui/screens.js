@@ -11,9 +11,11 @@ import {
 
 const BOOT_LINES = [
   "GREPOIRE OS v1.4 — Forensic Investigation Platform",
+  "a MORG systems production",
   "booting secure shell..............[ OK ]",
   "mounting evidence vault...........[ OK ]",
   "loading case files................[ OK ]",
+  "arcane runtime (morg-core)........[ OK ]",
   "",
   "CASE #4471 — OPERATION NIGHTJAR",
   "Meridian Dynamics reports a confidential client list has leaked.",

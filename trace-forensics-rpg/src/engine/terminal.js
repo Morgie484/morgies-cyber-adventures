@@ -89,6 +89,19 @@ export class Terminal {
         line("New here? Try 'ls' first, then 'cat' a file that looks interesting.", "t-amber"),
       ],
 
+      // Hidden signature easter egg (not listed in help — discover it!).
+      morg: () => [
+        line("  .  * .   ✦   .  *", "t-dim"),
+        line("   __  __  ___  ___   ___ ", "t-cyan"),
+        line("  |  \\/  |/ _ \\| _ \\ / __|", "t-cyan"),
+        line("  | |\\/| | (_) |   / | (_ |", "t-cyan"),
+        line("  |_|  |_|\\___/|_|_\\  \\___|", "t-cyan"),
+        line("  * .   ✦   .  *  .   ✦", "t-dim"),
+        line("GREPOIRE is a MORG systems production.", "t-amber"),
+        line("Where the grep meets the grimoire. Trace the ghost in the logs.", "t-dim"),
+        line("( you found the hidden command — +0 XP, +1 style )", "t-green"),
+      ],
+
       whoami: () => this.commands.stats(),
       stats: () => {
         const c = this.character;
