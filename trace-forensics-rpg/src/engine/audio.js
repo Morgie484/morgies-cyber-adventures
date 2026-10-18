@@ -150,6 +150,27 @@ class AudioEngine {
     else if (this.musicOn) this.startMusic();
     return this.enabled;
   }
+
+  // ---- volume controls (0..1) for the settings panel ----
+  setMasterVolume(v) {
+    this._master = v;
+    if (this.master) this.master.gain.value = v;
+  }
+  setMusicVolume(v) {
+    this._music = v;
+    if (this.musicGain) this.musicGain.gain.value = v * 0.3; // music sits lower
+  }
+  setSfxVolume(v) {
+    this._sfx = v;
+    if (this.sfxGain) this.sfxGain.gain.value = v;
+  }
+  getVolumes() {
+    return {
+      master: this._master ?? 0.6,
+      music: (this._music ?? 0.6),
+      sfx: (this._sfx ?? 0.5),
+    };
+  }
 }
 
 export const audio = new AudioEngine();

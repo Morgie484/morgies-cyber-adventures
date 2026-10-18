@@ -6,7 +6,8 @@ import { Terminal } from "./engine/terminal.js";
 import { isSuccess, skillCheck } from "./engine/dice.js";
 import { Overworld } from "./world/overworld.js";
 import { CASES, getCase } from "./data/cases.js";
-import { playBoot, showCharacterCreation, showDialogue, showCaseSelect, showTitleScreen, showLevelUp } from "./ui/screens.js";
+import { playBoot, showCharacterCreation, showDialogue, showCaseSelect, showTitleScreen, showLevelUp, showCodex, showSettings } from "./ui/screens.js";
+import * as lore from "./data/lore.js";
 import { animateRoll } from "./ui/diceRoll.js";
 import { audio } from "./engine/audio.js";
 import { STATS } from "./engine/character.js";
@@ -78,7 +79,7 @@ function startGame() {
   audio.startMusic();
   $("game").classList.remove("hidden");
   world = new Overworld($("world"), state.activeCase, state.character.appearance);
-  setHint("WASD / arrows to move. Walk to a location (blue) or NPC (yellow), then press SPACE. [E] Evidence · [M] Mute");
+  setHint("WASD move · SPACE interact · [E] Evidence · [J] Codex · [M] Mute");
   installAudioToggle();
   loop();
 
@@ -108,11 +109,14 @@ function onKeyDown(e) {
     world.keys[k] = true;
     if (k === " ") { e.preventDefault(); interact(); }
     if (k === "e") openBoard();
+    if (k === "j") openCodex();
     if (k === "m") toggleMute();
   } else if (state.mode === "terminal") {
     if (k === "escape") closeTerminal();
   } else if (state.mode === "board") {
     if (k === "escape") closeBoard();
+  } else if (state.mode === "codex") {
+    if (k === "escape") closeCodex();
   }
 }
 
@@ -127,6 +131,25 @@ function installAudioToggle() {
     "position:fixed;top:8px;right:12px;z-index:20;background:#0b131c;border:1px solid #22303d;color:#39ff14;font-family:monospace;padding:4px 10px;cursor:pointer";
   btn.onclick = toggleMute;
   document.body.appendChild(btn);
+
+  const gear = document.createElement("button");
+  gear.id = "settings-btn";
+  gear.textContent = "⚙";
+  gear.title = "Settings";
+  gear.style.cssText =
+    "position:fixed;top:8px;right:74px;z-index:20;background:#0b131c;border:1px solid #22303d;color:#26d9ff;font-family:monospace;padding:4px 10px;cursor:pointer";
+  gear.onclick = openSettings;
+  document.body.appendChild(gear);
+}
+
+function openSettings() {
+  const prevMode = state.mode;
+  state.mode = "settings";
+  showSettings({
+    audio,
+    onResetSave: () => { clearSave(); location.reload(); },
+    onClose: () => { state.mode = prevMode === "settings" ? "world" : prevMode; },
+  });
 }
 function toggleMute() {
   const on = audio.toggleAll();
@@ -203,13 +226,53 @@ function bindInput() {
   inputBound = true;
   input.addEventListener("keydown", async (e) => {
     if (state.mode !== "terminal") return;
+    const t = state.terminal;
+
+    // ↑ / ↓ — walk command history.
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault();
+      const hist = t.history;
+      if (!hist.length) return;
+      if (state.histIndex === undefined || state.histIndex === null) state.histIndex = hist.length;
+      state.histIndex += e.key === "ArrowUp" ? -1 : 1;
+      state.histIndex = Math.max(0, Math.min(hist.length, state.histIndex));
+      input.value = state.histIndex < hist.length ? hist[state.histIndex] : "";
+      audio.sfx("move");
+      return;
+    }
+
+    // Tab — complete command or filename.
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const matches = t.completions(input.value);
+      if (matches.length === 1) {
+        const parts = input.value.split(/\s+/);
+        parts[parts.length - 1] = matches[0];
+        input.value = parts.join(" ");
+        audio.sfx("select");
+      } else if (matches.length > 1) {
+        printLine(`${t.prompt()} ${input.value}`, "t-dim");
+        printLine(matches.join("    "), "t-cyan");
+        // fill the shared prefix
+        const prefix = sharedPrefix(matches);
+        const parts = input.value.split(/\s+/);
+        if (prefix.length > parts[parts.length - 1].length) {
+          parts[parts.length - 1] = prefix;
+          input.value = parts.join(" ");
+        }
+        audio.sfx("type");
+      }
+      return;
+    }
+
     if (e.key.length === 1) audio.sfx("type");
     if (e.key === "Enter") {
       const raw = input.value;
-      printLine(`${state.terminal.prompt()} ${raw}`, "t-dim");
+      printLine(`${t.prompt()} ${raw}`, "t-dim");
       input.value = "";
+      state.histIndex = null; // reset history cursor after a command
       input.disabled = true; // prevent double-submit during async roll
-      const lines = await state.terminal.run(raw);
+      const lines = await t.run(raw);
       input.disabled = false;
       input.focus();
       for (const l of lines) {
@@ -217,9 +280,20 @@ function bindInput() {
         if (l.exit) { closeTerminal(); return; }
         printLine(l.text, l.cls);
       }
-      $("term-prompt").textContent = state.terminal.prompt();
+      $("term-prompt").textContent = t.prompt();
     }
   });
+}
+
+// Longest common prefix of a list of strings (for Tab-completion).
+function sharedPrefix(arr) {
+  if (!arr.length) return "";
+  let p = arr[0];
+  for (const s of arr) {
+    while (!s.startsWith(p)) p = p.slice(0, -1);
+    if (!p) break;
+  }
+  return p;
 }
 
 function focusInput() { setTimeout(() => $("term-input").focus(), 50); }
@@ -282,6 +356,10 @@ function evidenceMeta(id) {
     ev_tamperedlog: { desc: "security.log hash MISMATCH on CARE-DC01 — the 02:45 'd.mercer' login was inserted to frame him." },
     ev_whois: { desc: "Decoded (base64→ROT13): svc_backup is controlled by Dr. A. Okafor; motive is a patient-data sale." },
     ev_payload3: { desc: "quorum.bin ransomware compiled on CARE-DB03 under USER=a.okafor — ties the build to Okafor." },
+    // Case 04 (D&D aether-stream quest)
+    ev_capture: { desc: "Gateway aether-stream capture: a tainted HTTP POST to whisper.nullchoir.aether, courier header X-Courier: m.falk." },
+    ev_oath: { desc: "Hidden oath scroll: Malric Falk swore loyalty to the Hollow Court." },
+    ev_scroll: { desc: "Banished ward-scroll: confirms the Null Choir dead-drop host accepts Falk's manifest." },
   };
   return meta[id] || { desc: "" };
 }
@@ -289,6 +367,24 @@ function evidenceMeta(id) {
 function checkCaseReady() {
   const n = state.character.evidence.length;
   setHint(`Evidence collected: ${n}. Press [E] to open the Evidence Board.`);
+}
+
+let codexHandle = null;
+function openCodex() {
+  state.mode = "codex";
+  audio.sfx("enter");
+  codexHandle = showCodex({
+    character: state.character,
+    cases: CASES,
+    solved: state.solved,
+    activeCaseId: state.activeCase ? state.activeCase.id : null,
+    lore,
+    onClose: () => { state.mode = "world"; codexHandle = null; },
+  });
+}
+function closeCodex() {
+  if (codexHandle) codexHandle.close();
+  else state.mode = "world";
 }
 
 function openBoard() {

@@ -14,7 +14,15 @@ Built to be **beginner-friendly** — a guided training case teaches one concept
 at a time, every command self-documents, and you can never permanently fail —
 with **harder cases** (encrypted data, hash-tampering, multi-hop trails) mixed in.
 
+## The world
+GREPOIRE is set in **the Archive** — a realm between worlds where all data persists as living magic. You play a **Data-Mage of the Order of the Silent Grep**: part detective, part sorcerer. Devices are shards of the Archive; encryption is a **ward** you *banish*; deleted files are **echoes** you *mend*; a hash is a file's **true-name sigil**; network traffic is an **aether-stream** you *scry*. Cases are **quests** commissioned by the Order, and your five skills are **arcane disciplines** (schools of magic). Read the full lore in the in-game Codex ([J]).
+
 ## Features
+- **Deep D&D world** — lore codex, faction bible, arcane re-skin of every mechanic, rank titles per level (Initiate → Grand Magus of the Archive), and **spellword aliases** you can cast in the shell: `scry`=scan, `banish`=decode, `mend`=recover, `divine`=sha256, `reveal`=ls, `behold`=cat, `commune`=stats.
+- **The Adventurer's Codex** ([J]) — an in-game journal with four tabs: your D&D-style **character sheet**, the **quest log**, **evidence & field notes**, and the **world codex** (realm primer, glossary, factions).
+- **Packet-capture quests** — a new forensic skill: `pcap <file>` scries an aether-stream (network capture), flags the suspicious flow, and `pcap <file> follow <#>` reassembles it.
+- **Keyboard terminal navigation** — command **history** with ↑/↓ and **Tab-completion** for commands, spellwords, and filenames.
+- **Settings panel** (⚙) — master/music/SFX **volume sliders** and a **reset-save** option.
 - **Save & continue** — progress auto-saves to your browser (localStorage): character, level, appearance, and which cases you've solved. The title screen offers **Continue** when a save exists; **New Game** starts fresh.
 - **Animated title screen** — a GREPOIRE landing page with falling data-rune rain before you begin.
 - **Animated dice rolls** — a tumbling d20 lands on your result with success/crit flair and sound.
@@ -41,8 +49,10 @@ python3 -m http.server 8000
 ### Controls
 - **WASD / arrow keys** — move around the world
 - **SPACE** — enter a location (blue block) or talk to an NPC (yellow dot)
-- **E** — open the Evidence Board (review clues, spend skill points, solve the case)
-- **M** — mute / unmute audio
+- **E** — open the Evidence Board (review clues, spend discipline points, solve the quest)
+- **J** — open the Adventurer's Codex (character sheet, quest log, evidence, world lore)
+- **M** — mute / unmute audio · **⚙** (top-right) — settings (volume, reset save)
+- **In the shell:** ↑/↓ for command history, **Tab** to complete commands & filenames
 - **ESC** — disconnect from a device / close a panel
 
 ### The loop
@@ -87,7 +97,9 @@ src/
     case01.js         "Operation Nightjar" — TUTORIAL case
     case02.js         "Hollow Ledger" — HARD case (tamper detection, backdoor, insider)
     case03.js         "Silent Quorum" — EXPERT case (frame-up, chained decoding, 2-evidence gate)
+    case04.js         "The Whispering Aether" — EXPERT packet-capture quest (D&D-framed)
     cases.js          Case registry
+    lore.js           World bible: realm, order, disciplines, factions, spellwords, rank titles
 ```
 
 ## Adding a harder case

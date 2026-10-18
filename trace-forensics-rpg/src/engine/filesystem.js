@@ -2,13 +2,14 @@
 // Supports normal files, "deleted" files (recoverable), and hidden files.
 
 export class VFile {
-  constructor({ name, content = "", deleted = false, hidden = false, locked = false, tag = null }) {
+  constructor({ name, content = "", deleted = false, hidden = false, locked = false, tag = null, packets = null }) {
     this.name = name;
     this.content = content;
     this.deleted = deleted;   // needs PERCEPTION/recover to find
     this.hidden = hidden;     // not shown by plain ls; needs ls -a
     this.locked = locked;     // encrypted; needs a key/crack
     this.tag = tag;           // optional evidence tag id
+    this.packets = packets;   // optional array of packet rows (for .pcap files)
   }
 }
 
