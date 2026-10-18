@@ -237,13 +237,25 @@ export class Terminal {
           out.push(line("Couldn't crack the encoding this time. Try again.", "t-amber"));
           return out;
         }
-        // Try base64, then ROT13, as beginner-level encodings.
-        let decoded = tryBase64Decode(f.content);
-        let method = "base64";
-        if (!decoded || !/[\x20-\x7e]{4,}/.test(decoded)) {
-          decoded = rot(f.content, 13);
-          method = "ROT13";
+        // Heuristic: does text read like plain English? (used to chain layers)
+        const looksPlain = (s) =>
+          s && /[\x20-\x7e]{4,}/.test(s) &&
+          /\b(the|and|to|is|of|by|from|wallet|host|account|payment|data|motive|controlled|buyer)\b/i.test(s);
+
+        // Try to peel encoding layers: base64 and/or ROT13, chained if needed.
+        let decoded = f.content;
+        const layers = [];
+        for (let pass = 0; pass < 3; pass++) {
+          if (looksPlain(decoded)) break;
+          const b64 = tryBase64Decode(decoded);
+          if (b64 && /[\x20-\x7e]{4,}/.test(b64) && b64 !== decoded) {
+            decoded = b64; layers.push("base64"); continue;
+          }
+          const r = rot(decoded, 13);
+          if (looksPlain(r) || pass === 0) { decoded = r; layers.push("ROT13"); continue; }
+          break;
         }
+        const method = layers.length ? layers.join(" → ") : "plaintext";
         if (f.locked) f.locked = false;
         out.push(line(`Decoded (${method}):`, "t-green"));
         decoded.split("\n").forEach((l) => out.push(line("  " + l)));

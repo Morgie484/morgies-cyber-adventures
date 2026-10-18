@@ -6,7 +6,7 @@ import { Terminal } from "./engine/terminal.js";
 import { isSuccess, skillCheck } from "./engine/dice.js";
 import { Overworld } from "./world/overworld.js";
 import { CASES, getCase } from "./data/cases.js";
-import { playBoot, showCharacterCreation, showDialogue, showCaseSelect } from "./ui/screens.js";
+import { playBoot, showCharacterCreation, showDialogue, showCaseSelect, showTitleScreen, showLevelUp } from "./ui/screens.js";
 import { animateRoll } from "./ui/diceRoll.js";
 import { audio } from "./engine/audio.js";
 import { STATS } from "./engine/character.js";
@@ -26,15 +26,21 @@ const unlockAudioOnce = () => { audio.unlock(); audio.startMusic(); window.remov
 window.addEventListener("pointerdown", unlockAudioOnce);
 window.addEventListener("keydown", unlockAudioOnce);
 
-playBoot($("boot"), () => {
+// Title screen → boot sequence → character creation → case select → game.
+showTitleScreen(() => {
   audio.unlock();
-  $("boot").classList.add("hidden");
-  showCharacterCreation(({ name, backgroundId, appearance }) => {
-    state.character = createCharacter(name, backgroundId);
-    state.character.appearance = appearance;
-    showCaseSelect(CASES, (caseId) => {
-      state.activeCase = getCase(caseId);
-      startGame();
+  audio.startMusic();
+  $("boot").classList.remove("hidden");
+  playBoot($("boot"), () => {
+    audio.unlock();
+    $("boot").classList.add("hidden");
+    showCharacterCreation(({ name, backgroundId, appearance }) => {
+      state.character = createCharacter(name, backgroundId);
+      state.character.appearance = appearance;
+      showCaseSelect(CASES, (caseId) => {
+        state.activeCase = getCase(caseId);
+        startGame();
+      });
     });
   });
 });
@@ -131,7 +137,11 @@ function openTerminal(host) {
     onXP: (amount, reason) => {
       const levels = grantXP(state.character, amount);
       printLine(`+${amount} XP (${reason})`, "t-cyan");
-      if (levels.length) { audio.sfx("levelUp"); printLine(`LEVEL UP! You are now level ${state.character.level}. (+2 skill points — spend on the Evidence Board)`, "t-amber"); }
+      if (levels.length) {
+        audio.sfx("levelUp");
+        printLine(`LEVEL UP! You are now level ${state.character.level}. (+2 skill points — spend on the Evidence Board)`, "t-amber");
+        showLevelUp(state.character.level, levels.length * 2);
+      }
     },
     // Async: plays the animated dice popup and resolves when it finishes.
     onCheck: (res, label, stat) => animateRoll(res, { stat, label }),
@@ -237,6 +247,13 @@ function evidenceMeta(id) {
     ev_backdoor: { desc: "Hidden backdoor '.ldr' siphoning 0.5% of each payment to acct_99120, installed by svc_deploy." },
     ev_authlog: { desc: "Auth log: svc_deploy token issued 23:40 from rogue host 10.0.0.9, then config modified + .ldr started." },
     ev_opsnote: { desc: "Decoded ops note: host 10.0.0.9 is R. Castellan's dev laptop; acct_99120 is theirs." },
+    // Case 03
+    ev_ransomnote: { desc: "Ransom note signed 'The Silent Quorum' — but tooling signature matches an INSIDER build, not a known gang." },
+    ev_decoy: { desc: "Planted .bat implicating D. Mercer — note admits its timestamps were BACKDATED (a frame-up)." },
+    ev_dropper: { desc: "Recovered dropper.tmp: payload staged from CARE-DB03 by svc_backup at 02:11." },
+    ev_tamperedlog: { desc: "security.log hash MISMATCH on CARE-DC01 — the 02:45 'd.mercer' login was inserted to frame him." },
+    ev_whois: { desc: "Decoded (base64→ROT13): svc_backup is controlled by Dr. A. Okafor; motive is a patient-data sale." },
+    ev_payload3: { desc: "quorum.bin ransomware compiled on CARE-DB03 under USER=a.okafor — ties the build to Okafor." },
   };
   return meta[id] || { desc: "" };
 }
@@ -308,8 +325,9 @@ function submitCase() {
   const verdict = $("verdict");
   if (correct === ac.questions.length) {
     audio.sfx("levelUp");
-    const reward = ac.difficulty === "HARD" ? 250 : 100;
+    const reward = ac.reward || (ac.difficulty === "EXPERT" ? 400 : ac.difficulty === "HARD" ? 250 : 100);
     const levels = grantXP(state.character, reward);
+    if (levels.length) showLevelUp(state.character.level, levels.length * 2);
     const otherCases = CASES.filter((c) => c.id !== ac.id);
     verdict.innerHTML =
       `<div style="color:#39ff14;font-size:16px">✓ CASE SOLVED — ${ac.name} closed!</div>

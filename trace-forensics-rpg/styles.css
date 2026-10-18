@@ -248,3 +248,90 @@ button.primary {
 .bd-result { margin-top: 8px; font-size: 20px; font-weight: bold; letter-spacing: 2px; }
 .bd-result.good { color: var(--green); }
 .bd-result.bad { color: var(--red); }
+
+/* ---- Title / landing screen ---- */
+#title-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  background: #05070a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+#title-screen.title-fade { animation: diceFadeOut 0.4s ease forwards; }
+#title-fx { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.5; }
+.title-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  font-family: var(--mono);
+}
+.title-logo {
+  font-size: 72px;
+  font-weight: bold;
+  letter-spacing: 10px;
+  color: #c9a6ff;
+  text-shadow: 0 0 20px rgba(201, 166, 255, 0.6), 0 0 48px rgba(106, 61, 214, 0.5);
+  animation: logoPulse 3s ease-in-out infinite;
+}
+@keyframes logoPulse {
+  0%, 100% { text-shadow: 0 0 20px rgba(201,166,255,0.6), 0 0 48px rgba(106,61,214,0.5); }
+  50%      { text-shadow: 0 0 28px rgba(79,240,224,0.7), 0 0 64px rgba(57,255,20,0.3); }
+}
+.title-sub { color: var(--cyan); letter-spacing: 3px; margin-top: 6px; font-size: 15px; }
+.title-tag { color: var(--dim); margin-top: 18px; font-size: 13px; }
+.title-start {
+  margin-top: 32px;
+  font-size: 15px;
+  letter-spacing: 2px;
+  padding: 12px 26px;
+  animation: startGlow 2s ease-in-out infinite;
+}
+@keyframes startGlow {
+  0%, 100% { box-shadow: 0 0 0 rgba(57,255,20,0); }
+  50%      { box-shadow: 0 0 22px rgba(57,255,20,0.5); }
+}
+.title-credit { color: #3a4a57; margin-top: 40px; font-size: 11px; letter-spacing: 2px; }
+
+/* ---- Level-up celebration ---- */
+.levelup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 92;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: diceFadeIn 0.2s ease;
+}
+.levelup-overlay.fade-out { animation: diceFadeOut 0.4s ease forwards; }
+.levelup-box {
+  position: relative;
+  text-align: center;
+  font-family: var(--mono);
+  padding: 30px 48px;
+  background: rgba(10, 20, 14, 0.9);
+  border: 1px solid var(--green);
+  box-shadow: 0 0 50px rgba(57, 255, 20, 0.4);
+  animation: luPop 0.5s cubic-bezier(0.2, 1.4, 0.5, 1);
+}
+@keyframes luPop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.levelup-burst {
+  position: absolute;
+  inset: -2px;
+  border: 2px solid var(--amber);
+  opacity: 0;
+  animation: luBurst 1.2s ease-out infinite;
+}
+@keyframes luBurst {
+  0%   { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+.levelup-title { color: var(--amber); font-size: 30px; font-weight: bold; letter-spacing: 6px; text-shadow: 0 0 16px rgba(255,176,0,0.7); }
+.levelup-level { color: #fff; font-size: 20px; margin-top: 6px; }
+.levelup-sub { color: var(--green); font-size: 13px; margin-top: 12px; }
