@@ -38,6 +38,16 @@ Every mission ends with a **debrief** explaining the real-world cybersecurity co
 
 Progress, leaderboard, achievements, and preferences are saved in the browser's `localStorage`.
 
+## 𓂀 Bonus game — ANKH·RA: Duel of the Eternal Grid
+
+A standalone **cyber-Egyptian checkers** game. Open `ankh-ra.html` in any browser — no build step, no dependencies.
+
+- Full draughts rules: mandatory captures, multi-jump chains, kinging, win detection
+- Neon violet-vs-orange "dynasties" battling on a glowing Senet-style grid
+- **Living pieces** — rotating energy rings, hover-float, springy glide-in moves, shatter bursts on capture, and a pop-in crown halo for kings
+- A technical HUD: algebraic coordinates, per-square IDs, live telemetry (ply count, captures, kings, forced-jump flag, clock), unit-integrity bars, and a timestamped move-log terminal
+- UNDO button and `prefers-reduced-motion` support
+
 ---
 
 _An educational project — built for learning._
