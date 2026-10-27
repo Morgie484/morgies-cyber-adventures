@@ -11,6 +11,7 @@ on:
       - add-trace-forensics-rpg
     paths:
       - "trace-forensics-rpg/**"
+      - "ankh-ra.html"
       - ".github/workflows/pages.yml"
   workflow_dispatch: {}
 
@@ -36,6 +37,9 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
+
+      - name: Bundle the ANKH-RA bonus game into the site
+        run: cp ankh-ra.html trace-forensics-rpg/ankh-ra.html
 
       - name: Upload the game folder as the Pages artifact
         uses: actions/upload-pages-artifact@v3
