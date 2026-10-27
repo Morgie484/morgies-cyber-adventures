@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANKH-RA // DUEL OF THE ETERNAL GRID</title>
+<style>
+  :root {
+    /* --neon-cyan / --neon-magenta kept as var names; recolored to a new palette:
+       electric violet vs hot-orange on a deep plum-black field */
+    --neon-cyan: #b14bff;      /* "player 1" — electric violet  */
+    --neon-magenta: #ff7a18;   /* "player 2" — hot orange       */
+    --neon-green: #00ffa3;     /* accents / OK status           */
+    --neon-amber: #ffe600;     /* alerts / forced-jump          */
+    --dark: #0c0514;
+    --dark2: #160a24;
+    --panel: rgba(24, 10, 40, 0.72);
+    --grid-line: rgba(177, 75, 255, 0.22);
+    --mono: 'Courier New', ui-monospace, monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 50% -10%, #2a0f45 0%, var(--dark) 60%),
+      var(--dark);
+    color: #cfe9ff;
+    font-family: var(--mono);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 14px 40px;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(circle at 50% 35%, black 10%, transparent 78%);
+    animation: drift 20s linear infinite;
+    pointer-events: none; z-index: 0;
+  }
+  /* scanline overlay — technical CRT feel */
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      to bottom, rgba(0,0,0,0) 0 2px, rgba(177,75,255,0.025) 2px 3px);
+    pointer-events: none; z-index: 2; mix-blend-mode: screen;
+  }
+  @keyframes drift {
+    from { background-position: 0 0, 0 0; }
+    to   { background-position: 40px 40px, 40px 40px; }
+  }
+
+  .app { position: relative; z-index: 3; width: 100%; max-width: 980px; }
+
+  header.titlebar {
+    display: flex; align-items: center; justify-content: space-between;
+    border: 1px solid var(--neon-cyan);
+    border-radius: 8px 8px 0 0;
+    padding: 8px 14px;
+    background: linear-gradient(90deg, rgba(177,75,255,0.08), transparent);
+    font-size: 0.72rem; letter-spacing: 0.18rem;
+  }
+  header .brand {
+    font-weight: 900; letter-spacing: 0.3rem; color: #fff;
+    text-shadow: 0 0 6px var(--neon-cyan), 0 0 16px var(--neon-magenta);
+    animation: flicker 5s infinite;
+  }
+  header .sys { color: var(--neon-green); text-shadow: 0 0 8px var(--neon-green); }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%;
+    background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green);
+    animation: blink 1.4s steps(2) infinite; margin-right:6px; vertical-align: middle; }
+  @keyframes blink { 50% { opacity: 0.2; } }
+  @keyframes flicker {
+    0%, 92%, 100% { opacity: 1; } 93% { opacity: 0.55; } 94% { opacity: 1; }
+    96% { opacity: 0.4; } 97% { opacity: 1; }
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) 300px;
+    gap: 0;
+    border: 1px solid var(--neon-cyan);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    background: var(--panel);
+    backdrop-filter: blur(2px);
+  }
+  @media (max-width: 820px) {
+    .layout { grid-template-columns: 1fr; }
+    .hud { border-left: none !important; border-top: 1px solid rgba(177,75,255,0.3); }
+  }
+
+  .stage { padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+  /* board with coordinate gutters */
+  .board-frame {
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    grid-template-rows: 1fr 22px;
+    gap: 4px;
+    width: min(86vw, 520px);
+  }
+  .rank-labels, .file-labels {
+    display: grid; font-size: 0.62rem; color: var(--neon-cyan);
+    opacity: 0.75; letter-spacing: 0.05rem;
+  }
+  .rank-labels { grid-row: 1; grid-column: 1; grid-template-rows: repeat(8, 1fr); }
+  .rank-labels span { display: flex; align-items: center; justify-content: center; }
+  .file-labels { grid-row: 2; grid-column: 2; grid-template-columns: repeat(8, 1fr); }
+  .file-labels span { display: flex; align-items: center; justify-content: center; }
+
+  .board {
+    grid-row: 1; grid-column: 2;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    aspect-ratio: 1 / 1;
+    border: 2px solid var(--neon-cyan);
+    border-radius: 6px;
+    box-shadow: 0 0 20px rgba(177,75,255,0.5), 0 0 60px rgba(255,122,24,0.22);
+    overflow: hidden; background: var(--dark2);
+  }
+
+  .cell { position: relative; display: flex; align-items: center; justify-content: center; }
+  .cell.light { background: rgba(0, 240, 255, 0.04); }
+  .cell.dark  { background: rgba(255, 0, 229, 0.06); cursor: pointer; }
+  .cell.dark::after {
+    content: ""; position: absolute; inset: 0;
+    box-shadow: inset 0 0 0 1px rgba(177,75,255,0.08);
+  }
+  /* tiny square-id readout in each dark cell corner — technical overlay */
+  .cell .sqid {
+    position: absolute; top: 2px; left: 3px; font-size: 0.5rem;
+    color: rgba(177,75,255,0.35); pointer-events: none; letter-spacing: 0;
+  }
+
+  .cell.selectable::before {
+    content: ""; position: absolute; inset: 4px;
+    border: 1px dashed var(--neon-green); border-radius: 6px;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .cell.move-target::before {
+    content: ""; position: absolute; width: 28%; height: 28%; border-radius: 50%;
+    background: var(--neon-green); box-shadow: 0 0 14px var(--neon-green);
+    animation: pulse 1s ease-in-out infinite;
+  }
+  .cell.capture-target::before {
+    content: ""; position: absolute; inset: 3px; border-radius: 6px;
+    border: 1px solid var(--neon-amber);
+    box-shadow: 0 0 12px var(--neon-amber), inset 0 0 10px rgba(255,230,0,0.3);
+    animation: pulse 0.8s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.35; transform: scale(0.92); }
+    50%      { opacity: 1;    transform: scale(1.05); }
+  }
+
+  .piece {
+    width: 72%; height: 72%; border-radius: 50%; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 1.3rem;
+    /* idle hover-float; combines with glide/pop below via custom props */
+    animation: float 3.2s ease-in-out infinite;
+    will-change: transform;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50%      { transform: translateY(-6%) scale(1.02); }
+  }
+
+  /* rotating conic "energy ring" behind the core */
+  .piece::before {
+    content: ""; position: absolute; inset: -14%;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg,
+      transparent 0deg, var(--ring) 70deg, transparent 150deg,
+      var(--ring) 220deg, transparent 300deg);
+    filter: blur(0.5px);
+    opacity: 0.85;
+    animation: spin 4s linear infinite;
+    z-index: -1;
+    -webkit-mask: radial-gradient(circle, transparent 56%, #000 58%);
+            mask: radial-gradient(circle, transparent 56%, #000 58%);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* pulsing inner core highlight */
+  .piece::after {
+    content: ""; position: absolute; inset: 22%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, rgba(255,255,255,0.9), transparent 70%);
+    animation: core 2.4s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes core {
+    0%, 100% { opacity: 0.4; transform: scale(0.85); }
+    50%      { opacity: 0.95; transform: scale(1); }
+  }
+
+  .piece.cyan {
+    --ring: #d9a2ff;
+    background: radial-gradient(circle at 35% 30%, #e3c4ff, #8a1ddb 60%, #3a0866);
+    box-shadow: 0 0 10px var(--neon-cyan), 0 0 22px rgba(177,75,255,0.6);
+    color: #2a0545;
+  }
+  .piece.magenta {
+    --ring: #ffc07a;
+    background: radial-gradient(circle at 35% 30%, #ffd9a8, #e05a00 60%, #6e2a00);
+    box-shadow: 0 0 10px var(--neon-magenta), 0 0 22px rgba(255,122,24,0.6);
+    color: #4a1c00;
+  }
+
+  /* selected: lift, brighten, speed up the ring */
+  .piece.selected { animation: selectedFloat 1.4s ease-in-out infinite; z-index: 5; }
+  .piece.selected::before { animation: spin 1.3s linear infinite; opacity: 1; }
+  @keyframes selectedFloat {
+    0%, 100% { transform: translateY(-8%) scale(1.12); }
+    50%      { transform: translateY(-14%) scale(1.16); }
+  }
+
+  /* glide: a piece that just moved slides in from its previous square */
+  .piece.glide {
+    animation: glide 0.32s cubic-bezier(.2,.9,.25,1.2);
+  }
+  @keyframes glide {
+    from { transform: translate(var(--gx), var(--gy)) scale(0.9); }
+    to   { transform: translate(0, 0) scale(1); }
+  }
+
+  /* king: twin crowns + golden halo, faster ring */
+  .piece.king {
+    box-shadow: 0 0 14px var(--neon-amber), 0 0 30px rgba(255,230,0,0.55);
+  }
+  .piece.king::before { animation: spin 2.2s linear infinite; }
+  .piece.king .crown {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; color: #fff; z-index: 2;
+    text-shadow: 0 0 6px #fff, 0 0 12px var(--neon-amber);
+    animation: crownPop 0.5s cubic-bezier(.2,1.5,.4,1);
+  }
+  @keyframes crownPop {
+    0% { transform: scale(0) rotate(-40deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+
+  /* capture shatter burst — spawned on the destroyed unit's square */
+  .burst {
+    position: absolute; inset: 0; pointer-events: none; z-index: 10;
+  }
+  .burst i {
+    position: absolute; top: 50%; left: 50%; width: 7px; height: 7px;
+    margin: -3.5px; border-radius: 50%;
+    background: var(--bcol); box-shadow: 0 0 8px var(--bcol);
+    animation: shard 0.6s ease-out forwards;
+  }
+  @keyframes shard {
+    to { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+  }
+  .shock {
+    position: absolute; inset: 20%; border-radius: 50%;
+    border: 2px solid var(--bcol); pointer-events: none; z-index: 9;
+    animation: shock 0.5s ease-out forwards;
+  }
+  @keyframes shock {
+    from { transform: scale(0.3); opacity: 1; }
+    to   { transform: scale(2.4); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .piece, .piece::before, .piece::after { animation: none !important; }
+  }
+
+  .status {
+    font-size: 0.82rem; letter-spacing: 0.2rem; text-transform: uppercase;
+    color: var(--neon-green); text-shadow: 0 0 8px var(--neon-green);
+    min-height: 1.4em; text-align: center;
+  }
+
+  .controls { display: flex; gap: 12px; }
+  button {
+    font-family: inherit; background: transparent; color: var(--neon-cyan);
+    border: 1px solid var(--neon-cyan); padding: 9px 18px;
+    letter-spacing: 0.14rem; text-transform: uppercase; font-size: 0.72rem;
+    border-radius: 5px; cursor: pointer; transition: all 0.2s;
+  }
+  button:hover { background: var(--neon-cyan); color: var(--dark); box-shadow: 0 0 18px var(--neon-cyan); }
+
+  /* ---------- TECHNICAL HUD ---------- */
+  .hud {
+    border-left: 1px solid rgba(177,75,255,0.3);
+    padding: 14px; display: flex; flex-direction: column; gap: 14px;
+    font-size: 0.72rem;
+  }
+  .panel { border: 1px solid rgba(177,75,255,0.25); border-radius: 6px; overflow: hidden; }
+  .panel > h2 {
+    font-size: 0.62rem; letter-spacing: 0.22rem; color: var(--neon-cyan);
+    background: rgba(177,75,255,0.07); padding: 6px 10px; border-bottom: 1px solid rgba(177,75,255,0.2);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .panel .body { padding: 10px; }
+
+  .readout { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; line-height: 1.7; }
+  .readout .k { color: #7fb6c9; letter-spacing: 0.06rem; }
+  .readout .v { text-align: right; color: #d8f6ff; }
+  .readout .v.cyan { color: var(--neon-cyan); }
+  .readout .v.magenta { color: var(--neon-magenta); }
+
+  .bars { display:flex; flex-direction: column; gap: 8px; }
+  .bar-row { display:flex; align-items:center; gap: 8px; }
+  .bar-row .lbl { width: 60px; font-size: 0.6rem; letter-spacing: 0.12rem; }
+  .bar { flex:1; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+  .bar > i { display:block; height:100%; transition: width 0.4s ease; }
+  .bar.cyan > i { background: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
+  .bar.magenta > i { background: var(--neon-magenta); box-shadow: 0 0 10px var(--neon-magenta); }
+  .bar-row .num { width: 18px; text-align:right; }
+
+  /* telemetry terminal */
+  .log { background: #02040c; border: 1px solid rgba(177,75,255,0.2); border-radius: 6px; }
+  .log h2 { color: var(--neon-amber); background: rgba(255,230,0,0.07); border-color: rgba(255,230,0,0.2); }
+  .log .stream {
+    height: 190px; overflow-y: auto; padding: 8px 10px; font-size: 0.68rem; line-height: 1.6;
+    scrollbar-width: thin; scrollbar-color: var(--neon-cyan) transparent;
+  }
+  .log .stream::-webkit-scrollbar { width: 6px; }
+  .log .stream::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 3px; }
+  .log .line { white-space: pre-wrap; }
+  .log .ts { color: #5a7a88; }
+  .log .c-cyan { color: var(--neon-cyan); }
+  .log .c-mag { color: var(--neon-magenta); }
+  .log .c-cap { color: var(--neon-amber); }
+  .log .c-sys { color: var(--neon-green); }
+  .log .cursor { color: var(--neon-amber); animation: blink 1s steps(2) infinite; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="titlebar">
+    <span class="brand">𓂀 ANKH&middot;RA</span>
+    <span class="sys"><span class="dot"></span>DYNASTY:ONLINE &nbsp;GLYPH v3.1 &nbsp;RITE//SENET-GRID-8x8</span>
+  </header>
+
+  <div class="layout">
+    <!-- BOARD STAGE -->
+    <section class="stage">
+      <div class="board-frame">
+        <div class="rank-labels" id="rankLabels"></div>
+        <div class="board" id="board"></div>
+        <div class="file-labels" id="fileLabels"></div>
+      </div>
+      <div class="status" id="status">CYAN TO MOVE</div>
+      <div class="controls">
+        <button id="resetBtn">RESET GRID</button>
+        <button id="undoBtn">UNDO</button>
+      </div>
+    </section>
+
+    <!-- TECHNICAL HUD -->
+    <aside class="hud">
+      <div class="panel">
+        <h2>TELEMETRY <span id="clock">00:00:00</span></h2>
+        <div class="body">
+          <div class="readout">
+            <span class="k">ACTIVE_NODE</span><span class="v" id="rActive">CYAN</span>
+            <span class="k">PLY_COUNT</span><span class="v" id="rPly">0</span>
+            <span class="k">LAST_MOVE</span><span class="v" id="rLast">—</span>
+            <span class="k">CAPTURES</span><span class="v" id="rCaps">0</span>
+            <span class="k">KINGS</span><span class="v" id="rKings">0</span>
+            <span class="k">FORCED_JUMP</span><span class="v" id="rForced">NO</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>UNIT INTEGRITY</h2>
+        <div class="body bars">
+          <div class="bar-row">
+            <span class="lbl" style="color:var(--neon-cyan)">CYAN</span>
+            <div class="bar cyan"><i id="barCyan" style="width:100%"></i></div>
+            <span class="num" id="numCyan">12</span>
+          </div>
+          <div class="bar-row">
+            <span class="lbl" style="color:var(--neon-magenta)">MGNTA</span>
+            <div class="bar magenta"><i id="barMag" style="width:100%"></i></div>
+            <span class="num" id="numMag">12</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel log">
+        <h2>MOVE_LOG // STDOUT</h2>
+        <div class="stream" id="logStream"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const SIZE = 8;
+const FILES = ['a','b','c','d','e','f','g','h'];
+const boardEl = document.getElementById('board');
+const statusEl = document.getElementById('status');
+const logStream = document.getElementById('logStream');
+
+// HUD refs
+const rActive = document.getElementById('rActive');
+const rPly    = document.getElementById('rPly');
+const rLast   = document.getElementById('rLast');
+const rCaps   = document.getElementById('rCaps');
+const rKings  = document.getElementById('rKings');
+const rForced = document.getElementById('rForced');
+const barCyan = document.getElementById('barCyan');
+const barMag  = document.getElementById('barMag');
+const numCyan = document.getElementById('numCyan');
+const numMag  = document.getElementById('numMag');
+
+let grid, turn, selected, validMoves;
+let ply, captures, history;
+let anim = {}; // one-shot animation hints consumed by the next render()
+
+// Convert [row,col] -> algebraic. row 0 = rank 8 (top), row 7 = rank 1 (bottom).
+function sq(r, c) { return FILES[c] + (SIZE - r); }
+
+function buildLabels() {
+  const rl = document.getElementById('rankLabels');
+  const fl = document.getElementById('fileLabels');
+  rl.innerHTML = ''; fl.innerHTML = '';
+  for (let r = 0; r < SIZE; r++) { const s = document.createElement('span'); s.textContent = SIZE - r; rl.appendChild(s); }
+  for (let c = 0; c < SIZE; c++) { const s = document.createElement('span'); s.textContent = FILES[c]; fl.appendChild(s); }
+}
+
+function initState() {
+  grid = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      if ((r + c) % 2 === 0) continue;
+      if (r < 3)      grid[r][c] = { color: 'magenta', king: false };
+      else if (r > 4) grid[r][c] = { color: 'cyan',    king: false };
+    }
+  }
+  turn = 'cyan'; selected = null; validMoves = [];
+  ply = 0; captures = 0; history = [];
+}
+
+function inBounds(r, c) { return r >= 0 && r < SIZE && c >= 0 && c < SIZE; }
+
+function directions(piece) {
+  if (piece.king) return [[-1,-1],[-1,1],[1,-1],[1,1]];
+  return piece.color === 'cyan' ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]];
+}
+
+function pieceMoves(r, c) {
+  const piece = grid[r][c];
+  const moves = [], jumps = [];
+  for (const [dr, dc] of directions(piece)) {
+    const nr = r + dr, nc = c + dc;
+    if (inBounds(nr, nc) && !grid[nr][nc]) moves.push({ from:[r,c], to:[nr,nc], jumped:null });
+    const jr = r + 2*dr, jc = c + 2*dc;
+    if (inBounds(jr, jc) && !grid[jr][jc] && grid[nr] && grid[nr][nc] &&
+        grid[nr][nc].color !== piece.color)
+      jumps.push({ from:[r,c], to:[jr,jc], jumped:[nr,nc] });
+  }
+  return { moves, jumps };
+}
+
+function allMoves(color) {
+  let moves = [], jumps = [];
+  for (let r = 0; r < SIZE; r++)
+    for (let c = 0; c < SIZE; c++)
+      if (grid[r][c] && grid[r][c].color === color) {
+        const pm = pieceMoves(r, c);
+        moves = moves.concat(pm.moves); jumps = jumps.concat(pm.jumps);
+      }
+  return jumps.length ? jumps : moves;
+}
+
+function countPieces(color) {
+  let n = 0, k = 0;
+  for (let r = 0; r < SIZE; r++)
+    for (let c = 0; c < SIZE; c++)
+      if (grid[r][c] && grid[r][c].color === color) { n++; if (grid[r][c].king) k++; }
+  return { n, k };
+}
+
+/* ---------- TELEMETRY LOG ---------- */
+function stamp() {
+  const d = new Date();
+  return [d.getHours(), d.getMinutes(), d.getSeconds()].map(x => String(x).padStart(2,'0')).join(':');
+}
+function log(html, cls) {
+  const line = document.createElement('div');
+  line.className = 'line';
+  line.innerHTML = `<span class="ts">[${stamp()}]</span> <span class="${cls||''}">${html}</span>`;
+  logStream.appendChild(line);
+  logStream.scrollTop = logStream.scrollHeight;
+}
+
+function render() {
+  boardEl.innerHTML = '';
+  const legal = allMoves(turn);
+  const selectable = new Set(legal.map(m => m.from.join(',')));
+  const anyJump = legal.length && legal[0].jumped;
+
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      const cell = document.createElement('div');
+      const dark = (r + c) % 2 === 1;
+      cell.className = 'cell ' + (dark ? 'dark' : 'light');
+
+      if (dark) {
+        const id = document.createElement('span');
+        id.className = 'sqid'; id.textContent = sq(r, c);
+        cell.appendChild(id);
+      }
+
+      if (!selected && dark && selectable.has(r + ',' + c)) cell.classList.add('selectable');
+
+      if (selected) {
+        const target = validMoves.find(m => m.to[0] === r && m.to[1] === c);
+        if (target) {
+          cell.classList.add(target.jumped ? 'capture-target' : 'move-target');
+          cell.addEventListener('click', () => makeMove(target));
+        }
+      }
+
+      const piece = grid[r][c];
+      if (piece) {
+        const p = document.createElement('div');
+        p.className = 'piece ' + piece.color + (piece.king ? ' king' : '');
+        if (selected && selected[0] === r && selected[1] === c) p.classList.add('selected');
+
+        // crown marker for kings (separate element so ::after can be the core glow)
+        if (piece.king) {
+          const cr = document.createElement('span');
+          cr.className = 'crown'; cr.textContent = '♛';
+          p.appendChild(cr);
+        }
+
+        // glide-in animation for the piece that just moved
+        if (anim.glide && anim.glide.r === r && anim.glide.c === c) {
+          p.classList.add('glide');
+          p.style.setProperty('--gx', anim.glide.dx + '%');
+          p.style.setProperty('--gy', anim.glide.dy + '%');
+        }
+        cell.appendChild(p);
+      }
+
+      // capture burst on the destroyed unit's square
+      if (anim.burst && anim.burst.r === r && anim.burst.c === c) {
+        cell.appendChild(makeBurst(anim.burst.color));
+      }
+
+      if (dark) cell.addEventListener('click', () => onCellClick(r, c));
+      boardEl.appendChild(cell);
+    }
+  }
+  anim = {}; // consume one-shot animation hints
+  updateHUD(anyJump);
+}
+
+// Build a shatter burst (radial shards + shockwave ring) in a color.
+function makeBurst(color) {
+  const frag = document.createDocumentFragment();
+  const bcol = color === 'cyan' ? 'var(--neon-cyan)' : 'var(--neon-magenta)';
+
+  const shock = document.createElement('div');
+  shock.className = 'shock'; shock.style.setProperty('--bcol', bcol);
+  frag.appendChild(shock);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'burst'; wrap.style.setProperty('--bcol', bcol);
+  const N = 10;
+  for (let i = 0; i < N; i++) {
+    const shard = document.createElement('i');
+    const ang = (i / N) * Math.PI * 2 + Math.random() * 0.4;
+    const dist = 60 + Math.random() * 40;
+    shard.style.setProperty('--dx', Math.cos(ang) * dist + '%');
+    shard.style.setProperty('--dy', Math.sin(ang) * dist + '%');
+    shard.style.animationDelay = (Math.random() * 0.05) + 's';
+    wrap.appendChild(shard);
+  }
+  frag.appendChild(wrap);
+
+  // clean up DOM after the animation ends
+  setTimeout(() => { shock.remove(); wrap.remove(); }, 700);
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
+  holder.appendChild(frag);
+  return holder;
+}
+
+function updateHUD(anyJump) {
+  const cy = countPieces('cyan'), mg = countPieces('magenta');
+  numCyan.textContent = cy.n; numMag.textContent = mg.n;
+  barCyan.style.width = (cy.n / 12 * 100) + '%';
+  barMag.style.width  = (mg.n / 12 * 100) + '%';
+  rActive.textContent = turn.toUpperCase();
+  rActive.className = 'v ' + turn;
+  rPly.textContent = ply;
+  rCaps.textContent = captures;
+  rKings.textContent = cy.k + mg.k;
+  rForced.textContent = anyJump ? 'YES' : 'NO';
+  rForced.style.color = anyJump ? 'var(--neon-amber)' : '';
+}
+
+function onCellClick(r, c) {
+  const legal = allMoves(turn);
+  const piece = grid[r][c];
+  if (piece && piece.color === turn) {
+    const pm = legal.filter(m => m.from[0] === r && m.from[1] === c);
+    if (pm.length) {
+      selected = [r, c]; validMoves = pm;
+      log(`SELECT ${turn.toUpperCase()} @ ${sq(r,c)} — ${pm.length} vector(s)`, turn==='cyan'?'c-cyan':'c-mag');
+      render(); return;
+    }
+  }
+  selected = null; validMoves = []; render();
+}
+
+function makeMove(move) {
+  const [fr, fc] = move.from, [tr, tc] = move.to;
+  const piece = grid[fr][fc];
+  history.push(JSON.stringify({ grid, turn, ply, captures }));
+
+  grid[tr][tc] = piece; grid[fr][fc] = null;
+
+  const notation = sq(fr,fc) + (move.jumped ? 'x' : '-') + sq(tr,tc);
+  const cls = turn === 'cyan' ? 'c-cyan' : 'c-mag';
+
+  // glide: offset = how far (in % of a cell) the piece travelled, negated
+  anim.glide = { r: tr, c: tc, dx: (fc - tc) * 100, dy: (fr - tr) * 100 };
+
+  if (move.jumped) {
+    const [jr, jc] = move.jumped;
+    anim.burst = { r: jr, c: jc, color: grid[jr][jc] ? grid[jr][jc].color : 'cyan' };
+    grid[jr][jc] = null;
+    captures++;
+    log(`CAPTURE ${notation} :: unit ${sq(jr,jc)} DESTROYED`, 'c-cap');
+  } else {
+    log(`MOVE ${notation}`, cls);
+  }
+
+  let promoted = false;
+  if (!piece.king && ((piece.color === 'cyan' && tr === 0) || (piece.color === 'magenta' && tr === SIZE-1))) {
+    piece.king = true; promoted = true;
+    log(`PROMOTE ${sq(tr,tc)} → KING [${turn.toUpperCase()}]`, 'c-sys');
+  }
+
+  rLast.textContent = notation;
+
+  // Multi-jump chain
+  if (move.jumped) {
+    const pm = pieceMoves(tr, tc);
+    if (pm.jumps.length && !promoted) {
+      selected = [tr, tc]; validMoves = pm.jumps;
+      statusEl.textContent = turn.toUpperCase() + ' — CHAIN JUMP REQUIRED';
+      log(`CHAIN// additional jump available @ ${sq(tr,tc)}`, 'c-cap');
+      render(); return;
+    }
+  }
+
+  ply++;
+  turn = turn === 'cyan' ? 'magenta' : 'cyan';
+  selected = null; validMoves = [];
+  render();
+  updateStatus();
+}
+
+function updateStatus() {
+  const legal = allMoves(turn);
+  if (legal.length === 0 || countPieces(turn).n === 0) {
+    const winner = (turn === 'cyan' ? 'MAGENTA' : 'CYAN');
+    statusEl.textContent = '⚡ ' + winner + ' WINS ⚡';
+    log(`=== GAME OVER :: ${winner} VICTORIOUS :: ${ply} PLIES ===`, 'c-sys');
+    return;
+  }
+  statusEl.textContent = turn.toUpperCase() + ' TO MOVE';
+}
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  initState(); render(); updateStatus();
+  log('GRID RE-INITIALIZED :: 24 UNITS DEPLOYED', 'c-sys');
+});
+document.getElementById('undoBtn').addEventListener('click', () => {
+  if (!history.length) { log('UNDO// buffer empty', 'c-sys'); return; }
+  const prev = JSON.parse(history.pop());
+  grid = prev.grid; turn = prev.turn; ply = prev.ply; captures = prev.captures;
+  selected = null; validMoves = [];
+  render(); updateStatus();
+  log('UNDO// reverted 1 state', 'c-sys');
+});
+
+// live clock
+setInterval(() => { document.getElementById('clock').textContent = stamp(); }, 1000);
+
+buildLabels();
+initState();
+render();
+updateStatus();
+log('RITE// the eternal grid awakens', 'c-sys');
+log('𓂀 VIOLET dynasty holds the first light', 'c-cyan');
+</script>
+</body>
+</html>
