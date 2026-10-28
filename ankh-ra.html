@@ -159,6 +159,28 @@
     box-shadow: 0 0 12px var(--neon-amber), inset 0 0 10px rgba(255,230,0,0.3);
     animation: pulse 0.8s ease-in-out infinite;
   }
+  /* keyboard cursor — bright inset frame + corner ticks on the focused square */
+  .cell.cursor {
+    box-shadow:
+      inset 0 0 0 2px #fff,
+      inset 0 0 14px rgba(255,255,255,0.45),
+      0 0 16px rgba(255,255,255,0.35);
+    z-index: 6;
+  }
+  .cell.cursor::after {
+    content: ""; position: absolute; inset: 0; z-index: 7; pointer-events: none;
+    background:
+      linear-gradient(#fff,#fff) left  0 top    0 / 10px 2px no-repeat,
+      linear-gradient(#fff,#fff) left  0 top    0 / 2px 10px no-repeat,
+      linear-gradient(#fff,#fff) right 0 top    0 / 10px 2px no-repeat,
+      linear-gradient(#fff,#fff) right 0 top    0 / 2px 10px no-repeat,
+      linear-gradient(#fff,#fff) left  0 bottom 0 / 10px 2px no-repeat,
+      linear-gradient(#fff,#fff) left  0 bottom 0 / 2px 10px no-repeat,
+      linear-gradient(#fff,#fff) right 0 bottom 0 / 10px 2px no-repeat,
+      linear-gradient(#fff,#fff) right 0 bottom 0 / 2px 10px no-repeat;
+    filter: drop-shadow(0 0 4px #fff);
+    animation: pulse 1s ease-in-out infinite;
+  }
   @keyframes pulse {
     0%, 100% { opacity: 0.35; transform: scale(0.92); }
     50%      { opacity: 1;    transform: scale(1.05); }
@@ -294,6 +316,19 @@
   }
   button:hover { background: var(--neon-cyan); color: var(--dark); box-shadow: 0 0 18px var(--neon-cyan); }
 
+  .keyhint {
+    display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center;
+    margin-top: 4px; font-size: 0.6rem; letter-spacing: 0.08rem;
+    color: #8fa6c9; max-width: 480px;
+  }
+  .keyhint kbd {
+    display: inline-block; min-width: 1.3em; text-align: center;
+    padding: 1px 5px; margin: 0 1px; border-radius: 4px;
+    background: rgba(177,75,255,0.12); border: 1px solid rgba(177,75,255,0.5);
+    color: var(--neon-cyan); font-family: var(--mono); font-size: 0.62rem;
+    box-shadow: 0 0 6px rgba(177,75,255,0.25);
+  }
+
   /* ---------- TECHNICAL HUD ---------- */
   .hud {
     border-left: 1px solid rgba(177,75,255,0.3);
@@ -339,6 +374,89 @@
   .log .c-cap { color: var(--neon-amber); }
   .log .c-sys { color: var(--neon-green); }
   .log .cursor { color: var(--neon-amber); animation: blink 1s steps(2) infinite; }
+
+  /* ========== PUZZLE WORLD: TEMPLE OF CODE ========== */
+  .portal {
+    position: fixed; inset: 0; z-index: 50;
+    display: none; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 50% 50%, rgba(40,10,70,0.75), rgba(5,5,20,0.96));
+    backdrop-filter: blur(4px);
+    padding: 20px;
+  }
+  .portal.open { display: flex; animation: portalIn 0.8s ease; }
+  @keyframes portalIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .portal-inner { position: relative; width: min(94vw, 620px); }
+
+  /* rotating portal rings behind the card */
+  .portal-rings { position: absolute; inset: -40px; pointer-events: none; }
+  .portal-rings i {
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid transparent;
+  }
+  .portal-rings i:nth-child(1) { border-top-color: var(--neon-cyan);    border-bottom-color: var(--neon-cyan);    animation: spin 6s linear infinite; }
+  .portal-rings i:nth-child(2) { border-left-color: var(--neon-magenta); border-right-color: var(--neon-magenta); animation: spin 9s linear infinite reverse; inset: 20px; }
+  .portal-rings i:nth-child(3) { border-top-color: var(--neon-amber);    animation: spin 4s linear infinite; inset: -14px; }
+
+  .portal-card {
+    position: relative;
+    background: linear-gradient(160deg, rgba(24,10,40,0.98), rgba(10,6,24,0.98));
+    border: 1px solid var(--neon-cyan);
+    border-radius: 12px;
+    box-shadow: 0 0 40px rgba(177,75,255,0.5), inset 0 0 30px rgba(0,0,0,0.6);
+    padding: 26px 24px;
+    color: #d8f6ff;
+    max-height: 86vh; overflow-y: auto;
+  }
+  .portal-card h2 {
+    font-size: 1.3rem; letter-spacing: 0.25rem; color: #fff; text-align: center;
+    text-shadow: 0 0 8px var(--neon-cyan), 0 0 20px var(--neon-magenta);
+    margin-bottom: 6px;
+  }
+  .portal-card .sub { text-align: center; font-size: 0.72rem; letter-spacing: 0.15rem;
+    color: var(--neon-amber); margin-bottom: 18px; }
+
+  .pz-progress { display: flex; gap: 6px; justify-content: center; margin-bottom: 18px; }
+  .pz-progress i {
+    width: 26px; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.12);
+  }
+  .pz-progress i.done { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+  .pz-progress i.active { background: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan); }
+
+  .pz-glyph { text-align: center; font-size: 1.6rem; margin-bottom: 8px; filter: drop-shadow(0 0 6px var(--neon-amber)); }
+  .pz-prompt { font-size: 0.86rem; line-height: 1.6; margin-bottom: 12px; }
+  .pz-code {
+    background: #02040c; border: 1px solid rgba(177,75,255,0.3); border-radius: 6px;
+    padding: 12px 14px; font-size: 0.8rem; line-height: 1.6; white-space: pre-wrap;
+    color: var(--neon-green); margin-bottom: 14px; overflow-x: auto;
+  }
+  .pz-code .kw { color: var(--neon-magenta); }
+  .pz-code .num { color: var(--neon-amber); }
+  .pz-code .cm { color: #5a7a88; }
+
+  .pz-form { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pz-form input {
+    flex: 1; min-width: 160px; font-family: var(--mono); font-size: 0.9rem;
+    background: rgba(0,0,0,0.5); border: 1px solid var(--neon-cyan); color: #fff;
+    padding: 10px 12px; border-radius: 6px; letter-spacing: 0.08rem;
+  }
+  .pz-form input:focus { outline: none; box-shadow: 0 0 14px var(--neon-cyan); }
+
+  .pz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 480px) { .pz-options { grid-template-columns: 1fr; } }
+  .pz-opt {
+    font-family: var(--mono); font-size: 0.82rem; text-align: left;
+    padding: 11px 14px; text-transform: none; letter-spacing: 0.04rem;
+  }
+
+  .pz-feedback { min-height: 1.4em; margin-top: 12px; font-size: 0.8rem; letter-spacing: 0.08rem; text-align: center; }
+  .pz-feedback.ok  { color: var(--neon-green); text-shadow: 0 0 8px var(--neon-green); }
+  .pz-feedback.bad { color: var(--neon-magenta); text-shadow: 0 0 8px var(--neon-magenta); }
+  .pz-hint { font-size: 0.7rem; color: #8fa6c9; text-align: center; margin-top: 6px; }
+
+  .portal-card .finale { text-align: center; }
+  .portal-card .finale .big { font-size: 2.4rem; margin: 10px 0; filter: drop-shadow(0 0 10px var(--neon-amber)); }
+  .portal-actions { display: flex; gap: 12px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
 </style>
 </head>
 <body>
@@ -360,6 +478,12 @@
       <div class="controls">
         <button id="resetBtn">RESET GRID</button>
         <button id="undoBtn">UNDO</button>
+      </div>
+      <div class="keyhint">
+        <span><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd><kbd>←</kbd> move cursor (diagonally)</span>
+        <span><kbd>Enter</kbd>/<kbd>Space</kbd> select &amp; move</span>
+        <span><kbd>Esc</kbd> cancel</span>
+        <span><kbd>U</kbd> undo &middot; <kbd>R</kbd> reset</span>
       </div>
     </section>
 
@@ -403,6 +527,16 @@
   </div>
 </div>
 
+<!-- ========== PUZZLE WORLD: TEMPLE OF CODE ========== -->
+<div class="portal" id="portal" aria-hidden="true">
+  <div class="portal-inner">
+    <div class="portal-rings"><i></i><i></i><i></i></div>
+    <div class="portal-card" id="portalCard">
+      <!-- content injected by JS -->
+    </div>
+  </div>
+</div>
+
 <script>
 const SIZE = 8;
 const FILES = ['a','b','c','d','e','f','g','h'];
@@ -425,6 +559,8 @@ const numMag  = document.getElementById('numMag');
 let grid, turn, selected, validMoves;
 let ply, captures, history;
 let anim = {}; // one-shot animation hints consumed by the next render()
+let cursor = [5, 0]; // keyboard cursor [row, col]; starts on a dark playable square
+let keyboardActive = false; // only show the cursor once the player uses the keyboard
 
 // Convert [row,col] -> algebraic. row 0 = rank 8 (top), row 7 = rank 1 (bottom).
 function sq(r, c) { return FILES[c] + (SIZE - r); }
@@ -514,6 +650,8 @@ function render() {
       const cell = document.createElement('div');
       const dark = (r + c) % 2 === 1;
       cell.className = 'cell ' + (dark ? 'dark' : 'light');
+
+      if (keyboardActive && cursor[0] === r && cursor[1] === c) cell.classList.add('cursor');
 
       if (dark) {
         const id = document.createElement('span');
@@ -674,19 +812,25 @@ function makeMove(move) {
   updateStatus();
 }
 
+let gameOver = false;
 function updateStatus() {
   const legal = allMoves(turn);
   if (legal.length === 0 || countPieces(turn).n === 0) {
     const winner = (turn === 'cyan' ? 'MAGENTA' : 'CYAN');
     statusEl.textContent = '⚡ ' + winner + ' WINS ⚡';
     log(`=== GAME OVER :: ${winner} VICTORIOUS :: ${ply} PLIES ===`, 'c-sys');
+    gameOver = true;
+    // VICTORY → open the gateway to the Temple of Code puzzle world
+    log('𓋹 A GATEWAY OPENS :: the victor is summoned to the TEMPLE OF CODE', 'c-sys');
+    setTimeout(() => openPortal(winner), 1400);
     return;
   }
+  gameOver = false;
   statusEl.textContent = turn.toUpperCase() + ' TO MOVE';
 }
 
 document.getElementById('resetBtn').addEventListener('click', () => {
-  initState(); render(); updateStatus();
+  initState(); cursor = [5, 0]; render(); updateStatus();
   log('GRID RE-INITIALIZED :: 24 UNITS DEPLOYED', 'c-sys');
 });
 document.getElementById('undoBtn').addEventListener('click', () => {
@@ -696,6 +840,237 @@ document.getElementById('undoBtn').addEventListener('click', () => {
   selected = null; validMoves = [];
   render(); updateStatus();
   log('UNDO// reverted 1 state', 'c-sys');
+});
+
+/* ========== PUZZLE WORLD: TEMPLE OF CODE ========== */
+// On victory the champion is transported here to solve coding/logic trials.
+const portalEl  = document.getElementById('portal');
+const portalCard = document.getElementById('portalCard');
+let pzState = { i: 0, winner: '', solved: 0 };
+
+// Each puzzle: a themed coding/logic riddle. `check` is case-insensitive and
+// trims whitespace. `type:'choice'` renders buttons; otherwise a text field.
+const PUZZLES = [
+  {
+    glyph: '𓂀',
+    title: 'TRIAL I — THE SCRIBE\u2019S CIPHER',
+    prompt: 'The temple scribes shifted every letter forward by 3 (a Caesar cipher). Decode the sacred word:',
+    code: 'FLSKHU',
+    hint: 'Shift each letter BACK by 3. F→C …',
+    answer: 'cipher',
+  },
+  {
+    glyph: '𓆎',
+    title: 'TRIAL II — THE ORACLE\u2019S OUTPUT',
+    prompt: 'Read the incantation. What does the oracle print?',
+    code: `<span class="kw">let</span> x = <span class="num">5</span>;\n<span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">0</span>; i < <span class="num">3</span>; i++) {\n  x = x * <span class="num">2</span>;\n}\nconsole.log(x);`,
+    hint: 'Double 5 three times: 5→10→20→…',
+    answer: '40',
+  },
+  {
+    glyph: '𓁹',
+    title: 'TRIAL III — THE BINARY SEAL',
+    prompt: 'This ancient seal is written in binary. What is its value in decimal (base-10)?',
+    code: '1 0 1 0 1',
+    hint: '16 + 4 + 1',
+    answer: '21',
+  },
+  {
+    glyph: '𓊖',
+    title: 'TRIAL IV — THE BROKEN GLYPH-SORT',
+    prompt: 'A sorting spell should return the array ascending, but one word is wrong. Which comparison fixes it?',
+    code: `<span class="cm">// goal: ascending order</span>\narr.sort((a, b) => ???);`,
+    type: 'choice',
+    options: ['a - b', 'b - a', 'a + b', 'a > b'],
+    answer: 'a - b',
+    hint: 'A negative result means a comes first.',
+  },
+  {
+    glyph: '𓇯',
+    title: 'TRIAL V — THE ETERNAL SEQUENCE',
+    prompt: 'The stars follow a pattern. Name the next number: 1, 1, 2, 3, 5, 8, ?',
+    code: 'each = sum of the two before it',
+    hint: '5 + 8',
+    answer: '13',
+  },
+];
+
+function norm(s) { return String(s).trim().toLowerCase(); }
+
+function openPortal(winner) {
+  pzState = { i: 0, winner, solved: 0 };
+  portalEl.classList.add('open');
+  portalEl.setAttribute('aria-hidden', 'false');
+  renderPuzzle();
+}
+function closePortal() {
+  portalEl.classList.remove('open');
+  portalEl.setAttribute('aria-hidden', 'true');
+}
+
+function progressBar() {
+  let html = '<div class="pz-progress">';
+  for (let j = 0; j < PUZZLES.length; j++) {
+    const cls = j < pzState.i ? 'done' : (j === pzState.i ? 'active' : '');
+    html += `<i class="${cls}"></i>`;
+  }
+  return html + '</div>';
+}
+
+function renderPuzzle() {
+  const p = PUZZLES[pzState.i];
+  let inputHtml;
+  if (p.type === 'choice') {
+    inputHtml = '<div class="pz-options">' +
+      p.options.map((o, idx) =>
+        `<button class="pz-opt" data-opt="${idx}">${o}</button>`).join('') +
+      '</div>';
+  } else {
+    inputHtml =
+      `<form class="pz-form" id="pzForm" autocomplete="off">
+         <input id="pzInput" type="text" placeholder="inscribe your answer…" aria-label="answer" />
+         <button type="submit">SUBMIT 𓂀</button>
+       </form>`;
+  }
+
+  portalCard.innerHTML = `
+    <h2>TEMPLE OF CODE</h2>
+    <div class="sub">${pzState.winner} DYNASTY · CHAMPION'S TRIALS</div>
+    ${progressBar()}
+    <div class="pz-glyph">${p.glyph}</div>
+    <div class="pz-prompt"><strong>${p.title}</strong><br>${p.prompt}</div>
+    <div class="pz-code">${p.code}</div>
+    ${inputHtml}
+    <div class="pz-feedback" id="pzFeedback"></div>
+    <div class="pz-hint" id="pzHint"></div>
+  `;
+
+  const feedback = document.getElementById('pzFeedback');
+  const hintEl = document.getElementById('pzHint');
+  let tries = 0;
+
+  function submit(val) {
+    if (norm(val) === norm(p.answer)) {
+      feedback.textContent = '✔ GLYPH ACCEPTED — the seal glows';
+      feedback.className = 'pz-feedback ok';
+      pzState.solved++;
+      pzState.i++;
+      setTimeout(() => { pzState.i <= PUZZLES.length - 1 ? renderPuzzle() : renderFinale(); }, 850);
+    } else {
+      tries++;
+      feedback.textContent = '✘ The seal rejects your answer';
+      feedback.className = 'pz-feedback bad';
+      if (tries >= 2) hintEl.textContent = '𓂀 HINT: ' + p.hint;
+    }
+  }
+
+  if (p.type === 'choice') {
+    portalCard.querySelectorAll('.pz-opt').forEach(btn => {
+      btn.addEventListener('click', () => submit(p.options[+btn.dataset.opt]));
+    });
+  } else {
+    const form = document.getElementById('pzForm');
+    const input = document.getElementById('pzInput');
+    input.focus();
+    form.addEventListener('submit', (ev) => { ev.preventDefault(); submit(input.value); });
+  }
+}
+
+function renderFinale() {
+  portalCard.innerHTML = `
+    <div class="finale">
+      <h2>TRIALS COMPLETE</h2>
+      <div class="big">𓋹 𓂀 𓋹</div>
+      <div class="pz-prompt">
+        The ${pzState.winner} champion has mastered all ${PUZZLES.length} trials of the
+        Temple of Code. The eternal grid and the coder's mind are now one.
+      </div>
+      <div class="sub" style="color:var(--neon-green)">
+        TRIALS SOLVED: ${pzState.solved} / ${PUZZLES.length}
+      </div>
+      <div class="portal-actions">
+        <button id="pzPlayAgain">NEW DUEL</button>
+        <button id="pzClose">RETURN TO GRID</button>
+      </div>
+    </div>
+  `;
+  log('𓋹 TEMPLE CLEARED :: champion returns enlightened', 'c-sys');
+  document.getElementById('pzPlayAgain').addEventListener('click', () => {
+    closePortal();
+    initState(); cursor = [5, 0]; gameOver = false; render(); updateStatus();
+    log('GRID RE-INITIALIZED :: 24 UNITS DEPLOYED', 'c-sys');
+  });
+  document.getElementById('pzClose').addEventListener('click', closePortal);
+}
+
+// allow Escape to close the portal
+portalEl.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePortal(); });
+
+/* ---------- KEYBOARD CONTROLS ---------- */
+// Confirm/activate the square under the cursor: pick a piece, play a move,
+// or deselect — mirrors the mouse-click behaviour.
+function activateSquare(r, c) {
+  if (selected) {
+    // if cursor is on a valid destination, play that move
+    const target = validMoves.find(m => m.to[0] === r && m.to[1] === c);
+    if (target) { makeMove(target); return; }
+    // if cursor is back on the selected piece, deselect it
+    if (selected[0] === r && selected[1] === c) {
+      selected = null; validMoves = [];
+      log('DESELECT', 'c-sys');
+      render(); return;
+    }
+    // otherwise try selecting a different piece under the cursor
+  }
+  onCellClick(r, c);
+}
+
+// Checkers pieces travel diagonally, so the cursor hops along the diagonal
+// dark-square lattice. Each arrow maps to one diagonal; this reaches every one
+// of the 32 dark squares (verified) and clamps at the board edges.
+function moveCursor(dr, dc) {
+  const nr = cursor[0] + dr, nc = cursor[1] + dc;
+  if (nr < 0 || nr >= SIZE || nc < 0 || nc >= SIZE) return; // clamp at edge
+  cursor = [nr, nc];
+}
+
+document.addEventListener('keydown', (e) => {
+  // while the puzzle portal is open, let it (and its inputs) handle keys
+  if (portalEl.classList.contains('open')) {
+    if (e.key === 'Escape') closePortal();
+    return;
+  }
+  const k = e.key;
+  const arrows = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
+
+  // first keyboard interaction just reveals the cursor
+  if (!keyboardActive && (arrows.includes(k) || k === 'Enter' || k === ' ')) {
+    keyboardActive = true;
+    // snap cursor onto the selected piece if one is active
+    if (selected) cursor = [selected[0], selected[1]];
+    render();
+    e.preventDefault();
+    return;
+  }
+
+  switch (k) {
+    // arrows map to the four diagonals (how checkers pieces move)
+    case 'ArrowUp':    moveCursor(-1, 1); render(); e.preventDefault(); break; // up-right
+    case 'ArrowRight': moveCursor( 1, 1); render(); e.preventDefault(); break; // down-right
+    case 'ArrowDown':  moveCursor( 1,-1); render(); e.preventDefault(); break; // down-left
+    case 'ArrowLeft':  moveCursor(-1,-1); render(); e.preventDefault(); break; // up-left
+    case 'Enter':
+    case ' ':
+      activateSquare(cursor[0], cursor[1]); e.preventDefault(); break;
+    case 'Escape':
+      if (selected) { selected = null; validMoves = []; log('DESELECT', 'c-sys'); render(); }
+      e.preventDefault(); break;
+    case 'u': case 'U':
+      document.getElementById('undoBtn').click(); break;
+    case 'r': case 'R':
+      document.getElementById('resetBtn').click(); break;
+    default: break;
+  }
 });
 
 // live clock

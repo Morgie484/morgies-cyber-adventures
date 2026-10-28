@@ -46,6 +46,8 @@ A standalone **cyber-Egyptian checkers** game. Open `ankh-ra.html` in any browse
 - Neon violet-vs-orange "dynasties" battling on a glowing Senet-style grid
 - **Living pieces** — rotating energy rings, hover-float, springy glide-in moves, shatter bursts on capture, and a pop-in crown halo for kings
 - A technical HUD: algebraic coordinates, per-square IDs, live telemetry (ply count, captures, kings, forced-jump flag, clock), unit-integrity bars, and a timestamped move-log terminal
+- **Keyboard play** — arrow keys move a cursor diagonally across the board, <kbd>Enter</kbd>/<kbd>Space</kbd> selects a piece and confirms a move, <kbd>Esc</kbd> cancels, <kbd>U</kbd> undoes, <kbd>R</kbd> resets
+- **🏛️ Temple of Code** — win a duel and your champion is transported to a bonus puzzle world of 5 coding/logic trials (cipher decoding, output prediction, binary, sorting, sequences)
 - UNDO button and `prefers-reduced-motion` support
 
 ---
